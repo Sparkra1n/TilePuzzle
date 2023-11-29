@@ -13,47 +13,37 @@ Sprite::Sprite(const char* path)
 
 void Sprite::update(const double deltaTime)
 {
-    const double speed = 5.0;
+    int verticalDirection = 0;
+    int horizontalDirection = 0;
 
-    switch (m_direction)
+    for (const auto key : m_pressedKeys)
     {
-    case Direction::Nowhere:
-        m_x += 0.0;
-        m_y += 0.0;
-        break;
-    case Direction::Up:
-        m_y = m_y - (speed * deltaTime);
-        break;
-    case Direction::Down:
-        m_y = m_y + (speed * deltaTime);
-        break;
-    case Direction::Left:
-        m_x = m_x - (speed * deltaTime);
-        break;
-    case Direction::Right:
-        m_x = m_x + (speed * deltaTime);
-        break;
-    case Direction::UpLeft:
-        m_x = m_x - (speed * deltaTime);
-        m_y = m_y - (speed * deltaTime);
-        break;
-    case Direction::UpRight:
-        m_x = m_x + (speed * deltaTime);
-        m_y = m_y - (speed * deltaTime);
-        break;
-    case Direction::DownLeft:
-        m_x = m_x - (speed * deltaTime);
-        m_y = m_y + (speed * deltaTime);
-        break;
-    case Direction::DownRight:
-        m_x = m_x + (speed * deltaTime);
-        m_y = m_y + (speed * deltaTime);
-        break;
+        switch (key)
+        {
+        case SDLK_w:
+            verticalDirection += -1;
+            break;
+        case SDLK_s:
+            verticalDirection += 1;
+            break;
+        case SDLK_a:
+            horizontalDirection += -1;
+            break;
+        case SDLK_d:
+            horizontalDirection += 1;
+            break;
+        }
     }
+
+    // Adjust the position based on the accumulated direction
+    m_x += m_speed * deltaTime * horizontalDirection;
+    m_y += m_speed * deltaTime * verticalDirection;
 
     m_position.x = static_cast<int>(m_x);
     m_position.y = static_cast<int>(m_y);
 }
+
+
 
 
 void Sprite::draw(SDL_Surface* windowSurface)
@@ -71,47 +61,16 @@ SDL_Surface* Sprite::loadSurface(const char* path)
 
 void Sprite::handleEvent(const SDL_Event& event)
 {
-    const uint8_t* keys = SDL_GetKeyboardState(nullptr);
-
+    // Handle keydown and keyup events to update the set of pressed keys
     switch (event.type)
     {
     case SDL_KEYDOWN:
-    {
-        switch (event.key.keysym.sym)
-        {
-        case SDLK_w:
-            m_direction = Direction::Up;
-            break;
-        case SDLK_s:
-            m_direction = Direction::Down;
-            break;
-        case SDLK_a:
-            m_direction = Direction::Left;
-            break;
-        case SDLK_d:
-            m_direction = Direction::Right;
-            break;
-        default:
-            break;
-        }
-
-        // Handle combinations for diagonal movement
-        if (keys[SDL_SCANCODE_W] && keys[SDL_SCANCODE_A])
-            m_direction = Direction::UpLeft;
-        else if (keys[SDL_SCANCODE_W] && keys[SDL_SCANCODE_D])
-            m_direction = Direction::UpRight;
-        else if (keys[SDL_SCANCODE_S] && keys[SDL_SCANCODE_A])
-            m_direction = Direction::DownLeft;
-        else if (keys[SDL_SCANCODE_S] && keys[SDL_SCANCODE_D])
-            m_direction = Direction::DownRight;
+        m_pressedKeys.insert(event.key.keysym.sym);
         break;
-    }
 
     case SDL_KEYUP:
-        m_direction = Direction::Nowhere;
+        m_pressedKeys.erase(event.key.keysym.sym);
         break;
-
-        // Other cases
 
     default:
         break;
