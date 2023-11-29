@@ -3,6 +3,7 @@
 #include "SDL.h"
 #include "SDL_image.h"
 #include "SDLExceptions.h"
+#include "Sprite.h"
 
 class Game
 {
@@ -13,8 +14,7 @@ public:
     Game();
     ~Game();
 private:
-	SDL_Surface* m_image{};
-    SDL_Rect m_imagePosition{};
+	Sprite m_image;
 
     SDL_Window* m_window{};
     SDL_Surface* m_windowSurface{};
@@ -25,10 +25,4 @@ private:
 
     int m_screenWidth = 640;
     int m_screenHeight = 480;
-
-    double m_imageX{};
-    double m_imageY{};
-
-
-    static SDL_Surface* loadSurface(const char* path);
 };

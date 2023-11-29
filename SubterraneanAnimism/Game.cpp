@@ -1,4 +1,5 @@
 #include "Game.h"
+#include <iostream>
 
 Game::Game()
 {
@@ -20,13 +21,14 @@ Game::Game()
     if (m_windowSurface == nullptr)
         throw SDLInitializationException(SDL_GetError());
 
-    m_image = loadSurface("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp");
+    m_image = Sprite("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp");
 }
 
 void Game::draw()
 {
     SDL_FillRect(m_windowSurface, nullptr, SDL_MapRGB(m_windowSurface->format, 0, 0, 0));
-    SDL_BlitSurface(m_image, nullptr, m_windowSurface, &m_imagePosition);
+   /* SDL_BlitSurface(m_image, nullptr, m_windowSurface, &m_imagePosition);*/
+    m_image.draw(m_windowSurface);
 	SDL_UpdateWindowSurface(m_window);
 }
 
@@ -35,29 +37,29 @@ void Game::run()
     bool alive = true;
     while (alive)
     {
-        SDL_Event e;
-        while (SDL_PollEvent(&e))
+        while (SDL_PollEvent(&m_windowEvent) > 0)
         {
-            if (e.type == SDL_QUIT)
+            m_image.handleEvent(m_windowEvent);
+            switch (m_windowEvent.type)
+            {
+            case SDL_QUIT:
                 alive = false;
+                break;
+            }
         }
+
         update(1.0 / 60.0);
         draw();
     }
 }
 void Game::update(const double deltaTime)
 {
-    m_imageX = m_imageX + 5 * deltaTime;
-    m_imagePosition.x = static_cast<int>(m_imageX);
+    //m_imageX = m_imageX + 5 * deltaTime;
+    //m_imagePosition.x = static_cast<int>(m_imageX);
+    m_image.update(deltaTime);
 }
 
-SDL_Surface* Game::loadSurface(const char* path)
-{
-	 SDL_Surface* surface = SDL_LoadBMP(path);
-    if (!surface)
-        throw SDLImageLoadException(SDL_GetError());
-    return surface;
-}
+
 
 Game::~Game()
 {

@@ -3,8 +3,8 @@
 
 int main(int argc, char** argv)
 {
-    std::cout << "Starting...\n";
-    try {
+    try 
+    {
 		Game game;
         game.run();
     }
