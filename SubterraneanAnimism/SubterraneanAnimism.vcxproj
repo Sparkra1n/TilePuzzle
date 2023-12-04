@@ -147,11 +147,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CollisionObserver.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CollisionObserver.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="SDLExceptions.h" />
     <ClInclude Include="Sprite.h" />

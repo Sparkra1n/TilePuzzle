@@ -1,5 +1,4 @@
 #include "Game.h"
-#include <iostream>
 
 Game::Game()
 {
@@ -21,14 +20,13 @@ Game::Game()
     if (m_windowSurface == nullptr)
         throw SDLInitializationException(SDL_GetError());
 
-    m_image = Sprite("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp");
+    m_player  = std::make_shared<PlayerSprite>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp", 1.0);
 }
 
 void Game::draw()
 {
     SDL_FillRect(m_windowSurface, nullptr, SDL_MapRGB(m_windowSurface->format, 0, 0, 0));
-   /* SDL_BlitSurface(m_image, nullptr, m_windowSurface, &m_imagePosition);*/
-    m_image.draw(m_windowSurface);
+    m_player->draw(m_windowSurface);
 	SDL_UpdateWindowSurface(m_window);
 }
 
@@ -39,7 +37,7 @@ void Game::run()
     {
         while (SDL_PollEvent(&m_windowEvent) > 0)
         {
-            m_image.handleEvent(m_windowEvent);
+            m_player->handleEvent(m_windowEvent);
             switch (m_windowEvent.type)
             {
             case SDL_QUIT:
@@ -52,19 +50,32 @@ void Game::run()
         draw();
     }
 }
-void Game::update(const double deltaTime)
+void Game::update(const double deltaTime) const
 {
-    //m_imageX = m_imageX + 5 * deltaTime;
-    //m_imagePosition.x = static_cast<int>(m_imageX);
-    m_image.update(deltaTime);
+    for (const auto& sprite : m_sprites)
+        sprite->update(deltaTime);
 }
 
+void Game::addSprite(CollisionSprite& sprite)
+{
+    m_sprites.push_back(std::make_shared<CollisionSprite>(sprite));
+    sprite.setObserver(*this);
+}
 
+bool Game::canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY)
+{
+    // Check for collision with other sprites in the game
+    for (const auto& sprite : m_sprites)
+    {
+        if (sprite->hasCollisionWith(collisionSprite))
+            return false; 
+    }
+    return true;
+}
 
 Game::~Game()
 {
     SDL_FreeSurface(m_windowSurface);
-    //SDL_DestroyRenderer(m_renderer);
     SDL_DestroyWindow(m_window);
     SDL_Quit();
 }

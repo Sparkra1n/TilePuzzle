@@ -11,12 +11,31 @@ Sprite::Sprite(const char* path)
     m_position.h = m_image->h;
 }
 
-void Sprite::update(const double deltaTime)
+void Sprite::draw(SDL_Surface* windowSurface)
+{
+    SDL_BlitSurface(m_image, nullptr, windowSurface, &m_position);
+}
+
+SDL_Surface* Sprite::loadSurface(const char* path)
+{
+    SDL_Surface* surface = SDL_LoadBMP(path);
+    if (!surface)
+        throw SDLImageLoadException(SDL_GetError());
+    return surface;
+}
+
+bool CollisionSprite::hasCollisionWith(const CollisionSprite& other) const
+{
+    const SDL_Rect* otherRect = other.getPosition();
+    return SDL_HasIntersection(&m_position, otherRect) == SDL_TRUE;
+}
+
+void PlayerSprite::update(const double deltaTime)
 {
     int verticalDirection = 0;
     int horizontalDirection = 0;
 
-    for (const auto key : m_pressedKeys)
+    for (const SDL_Keycode key : m_pressedKeys)
     {
         switch (key)
         {
@@ -32,34 +51,23 @@ void Sprite::update(const double deltaTime)
         case SDLK_d:
             horizontalDirection += 1;
             break;
+        default:
+            break;
         }
     }
+    // Calculate the potential new position based on the direction and speed
+    const double potentialX = m_x + m_speed * deltaTime * horizontalDirection;
+    const double potentialY = m_y + m_speed * deltaTime * verticalDirection;
 
-    // Adjust the position based on the accumulated direction
-    m_x += m_speed * deltaTime * horizontalDirection;
-    m_y += m_speed * deltaTime * verticalDirection;
-
-    m_position.x = static_cast<int>(m_x);
-    m_position.y = static_cast<int>(m_y);
+    // Check for collision with obstacles or other sprites
+    if (m_observer.canMoveTo(this, potentialX, potentialY))
+    {
+        m_position.x = static_cast<int>(potentialX);
+        m_position.y = static_cast<int>(potentialY);
+    }
 }
 
-
-
-
-void Sprite::draw(SDL_Surface* windowSurface)
-{
-    SDL_BlitSurface(m_image, nullptr, windowSurface, &m_position);
-}
-
-SDL_Surface* Sprite::loadSurface(const char* path)
-{
-    SDL_Surface* surface = SDL_LoadBMP(path);
-    if (!surface)
-        throw SDLImageLoadException(SDL_GetError());
-    return surface;
-}
-
-void Sprite::handleEvent(const SDL_Event& event)
+void PlayerSprite::handleEvent(const SDL_Event& event)
 {
     // Handle keydown and keyup events to update the set of pressed keys
     switch (event.type)
@@ -67,11 +75,9 @@ void Sprite::handleEvent(const SDL_Event& event)
     case SDL_KEYDOWN:
         m_pressedKeys.insert(event.key.keysym.sym);
         break;
-
     case SDL_KEYUP:
         m_pressedKeys.erase(event.key.keysym.sym);
         break;
-
     default:
         break;
     }
