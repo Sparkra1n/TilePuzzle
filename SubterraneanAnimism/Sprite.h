@@ -72,14 +72,6 @@ public:
 	 */
 	[[nodiscard]] virtual bool hasCollisionWith(const Sprite& other) const { return false; }
 
-	///**
-	// * @brief Determine if a SDL_Rect intersects with another
-	// * @param first first sprite's position and dimensions
-	// * @param second second sprite's position and dimensions
-	// * @return bool
-	// */
-	//[nodiscard]] static bool hasCollisionWith(const SDL_Rect first, const SDL_Rect second);
-
 	/**
 	 * @brief Set the position of the sprite
 	 *

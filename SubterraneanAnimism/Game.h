@@ -30,9 +30,9 @@ public:
 
     /**
      * @brief Adds a CollisionSprite to the game, registering it for updates and collisions.
-     * @param sprite A reference to the CollisionSprite to be added.
+     * @param sprite A shared ptr reference to the CollisionSprite to be added.
      */
-    void addSprite(CollisionSprite& sprite);
+    void addSprite(const std::shared_ptr<CollisionSprite>& sprite);
 
     //void notifyCollision(CollisionSprite* sprite, double& potentialX, double& potentialY) override;
 
