@@ -36,7 +36,7 @@ public:
 
     //void notifyCollision(CollisionSprite* sprite, double& potentialX, double& potentialY) override;
 
-    bool canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY) const override;
+    [[nodiscard]] bool canMoveTo(const CollisionSprite& collisionSprite, double potentialX, double potentialY) const override;
 
     void updateSprites();
 
@@ -52,6 +52,7 @@ public:
 private:
     std::vector<std::shared_ptr<Sprite>> m_sprites; // Collection of sprites in the game.
 	std::shared_ptr<PlayerSprite> m_player;         // Player sprite
+    std::shared_ptr<CollisionSprite> m_rectangle;
     SDL_Window* m_window{};                         // SDL window instance
     SDL_Surface* m_windowSurface{};                 // SDL window surface
     SDL_Event m_windowEvent{};                      // SDL event for window handling

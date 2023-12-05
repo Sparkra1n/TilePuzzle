@@ -26,8 +26,8 @@ SDL_Surface* Sprite::loadSurface(const char* path)
 
 bool CollisionSprite::hasCollisionWith(const Sprite& other) const
 {
-    const SDL_Rect* otherRect = other.getPosition();
-    return SDL_HasIntersection(&m_position, otherRect) == SDL_TRUE;
+    const SDL_Rect otherRect = other.getPosition();
+    return SDL_HasIntersection(&m_position, &otherRect) == SDL_TRUE;
 }
 
 void PlayerSprite::update(const double deltaTime)
@@ -64,6 +64,12 @@ void PlayerSprite::update(const double deltaTime)
     if (!m_observer)
         return;
 
+#if 0
+    bool b = m_observer->canMoveTo(*this, potentialX, potentialY);
+    std::cout << "canMoveTo: " << b
+	          << "Potential: " << "(" << potentialX << ", " << potentialY << ")"
+			  << "Current: " << "(" << m_position.x << ", " << m_position.y << ")" << "\r";
+#endif
     if (m_observer->canMoveTo(*this, potentialX, potentialY))
     {
         m_x = potentialX;

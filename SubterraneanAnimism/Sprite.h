@@ -4,9 +4,17 @@
 #include "SDL_image.h"
 #include "SDLExceptions.h"
 #include "CollisionObserver.h"
+#include <iostream>
 #include <unordered_set>
 
 class CollisionObserver;
+
+struct Vector2
+{
+	Vector2(const int x, const int y) : x(x), y(y) {}
+	int x;
+	int y;
+};
 
 class Sprite
 {
@@ -43,7 +51,13 @@ public:
 	 * @brief Returns the position (SDL_Rect) of the sprite.
 	 * @return 
 	 */
-	[[nodiscard]] const SDL_Rect* getPosition() const { return &m_position; }
+	[[nodiscard]] SDL_Rect getPosition() const { return m_position; }
+
+	/**
+	 * @brief Returns the position (SDL_Rect) of the sprite.
+	 * @return
+	 */
+	[[nodiscard]] Vector2 getCoords() const { return { m_position.x, m_position.y }; }
 
 	/**
 	 * @brief determine if sprite is a CollisionSprite
@@ -52,11 +66,25 @@ public:
 	virtual bool isCollisionSprite() { return false; }
 
 	/**
-	 * @brief determine if this CollisionSprite collides with another CollisionSprite
+	 * @brief Determine if this CollisionSprite collides with another CollisionSprite
 	 * @param other
 	 * @return bool
 	 */
-	[[nodiscard]] virtual bool hasCollisionWith(const Sprite& other) { return false; }
+	[[nodiscard]] virtual bool hasCollisionWith(const Sprite& other) const { return false; }
+
+	///**
+	// * @brief Determine if a SDL_Rect intersects with another
+	// * @param first first sprite's position and dimensions
+	// * @param second second sprite's position and dimensions
+	// * @return bool
+	// */
+	//[nodiscard]] static bool hasCollisionWith(const SDL_Rect first, const SDL_Rect second);
+
+	/**
+	 * @brief Set the position of the sprite
+	 *
+	 */
+	void setPosition(const int x, const int y) { m_position.x = x; m_position.y = y; }
 protected:
 	static SDL_Surface* loadSurface(const char* path);
 	SDL_Surface* m_image{};
@@ -83,7 +111,7 @@ public:
 	 * @param other 
 	 * @return bool
 	 */
-	[[nodiscard]] bool hasCollisionWith(const Sprite& other) const;
+	[[nodiscard]] bool hasCollisionWith(const Sprite& other) const override;
 
 	/**
 	 * @brief Sets the observer for the CollisionSprite, allowing it to receive collision notifications.
@@ -106,7 +134,7 @@ public:
 	 * @brief Handles player events such as keypresses.
 	 * @param event
 	 */
-	virtual void handleEvent(const SDL_Event& event) override;
+	void handleEvent(const SDL_Event& event) override;
 
 	/**
 	 * @brief Sets the speed of the player sprite.
