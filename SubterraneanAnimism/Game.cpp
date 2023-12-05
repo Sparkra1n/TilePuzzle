@@ -20,7 +20,9 @@ Game::Game()
     if (m_windowSurface == nullptr)
         throw SDLInitializationException(SDL_GetError());
 
-    m_player  = std::make_shared<PlayerSprite>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp", 1.0);
+    m_player = std::make_shared<PlayerSprite>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp", 1.0);
+    m_player->setObserver(this);
+    m_sprites.emplace_back(m_player);
 }
 
 void Game::draw()
@@ -59,12 +61,11 @@ void Game::update(const double deltaTime) const
 void Game::addSprite(CollisionSprite& sprite)
 {
     m_sprites.push_back(std::make_shared<CollisionSprite>(sprite));
-    sprite.setObserver(*this);
+    sprite.setObserver(this);
 }
 
-bool Game::canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY)
+bool Game::canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY) const
 {
-    // Check for collision with other sprites in the game
     for (const auto& sprite : m_sprites)
     {
         if (sprite->hasCollisionWith(collisionSprite))

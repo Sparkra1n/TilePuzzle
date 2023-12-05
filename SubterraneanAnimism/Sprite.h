@@ -6,20 +6,7 @@
 #include "CollisionObserver.h"
 #include <unordered_set>
 
-class CollisionSprite;
-
-enum class Direction
-{
-	Nowhere = 0,
-	Up,
-	Down,
-	Left,
-	Right,
-	UpLeft,
-	UpRight,
-	DownLeft,
-	DownRight
-};
+class CollisionObserver;
 
 class Sprite
 {
@@ -69,7 +56,7 @@ public:
 	 * @param other
 	 * @return bool
 	 */
-	[[nodiscard]] virtual bool hasCollisionWith(const CollisionSprite& other) const { return false; }
+	[[nodiscard]] virtual bool hasCollisionWith(const Sprite& other) { return false; }
 protected:
 	static SDL_Surface* loadSurface(const char* path);
 	SDL_Surface* m_image{};
@@ -79,7 +66,11 @@ protected:
 class CollisionSprite : public Sprite
 {
 public:
-	CollisionSprite(const char* path) : Sprite(path) {}
+	CollisionSprite(const char* path) : Sprite(path) { m_observer = nullptr; }
+
+	virtual void handleEvent(const SDL_Event& event) override {};
+
+	virtual void update(double deltaTime) override {};
 
 	/**
 	 * @brief determine if sprite is a CollisionSprite
@@ -92,16 +83,16 @@ public:
 	 * @param other 
 	 * @return bool
 	 */
-	[[nodiscard]] bool hasCollisionWith(const CollisionSprite& other) const;
+	[[nodiscard]] bool hasCollisionWith(const Sprite& other) const;
 
 	/**
 	 * @brief Sets the observer for the CollisionSprite, allowing it to receive collision notifications.
 	 * @param observer A reference to the CollisionObserver to be set as the observer.
 	 */
-	void setObserver(const CollisionObserver& observer) { m_observer = observer; }
+	void setObserver(const CollisionObserver* observer) { m_observer = observer; }
 
 protected:
-	CollisionObserver m_observer{};
+	const CollisionObserver* m_observer; // Class that will determine collisions
 };
 
 class PlayerSprite : public CollisionSprite
@@ -110,7 +101,12 @@ public:
 	PlayerSprite(const char* path, const double speed = 1.0) : CollisionSprite(path), m_speed(speed) {}
 	~PlayerSprite() override = default;
 	void update(double deltaTime) override;
-	void handleEvent(const SDL_Event& event) override;
+
+	/**
+	 * @brief Handles player events such as keypresses.
+	 * @param event
+	 */
+	virtual void handleEvent(const SDL_Event& event) override;
 
 	/**
 	 * @brief Sets the speed of the player sprite.

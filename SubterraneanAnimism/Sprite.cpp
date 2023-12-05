@@ -24,7 +24,7 @@ SDL_Surface* Sprite::loadSurface(const char* path)
     return surface;
 }
 
-bool CollisionSprite::hasCollisionWith(const CollisionSprite& other) const
+bool CollisionSprite::hasCollisionWith(const Sprite& other) const
 {
     const SDL_Rect* otherRect = other.getPosition();
     return SDL_HasIntersection(&m_position, otherRect) == SDL_TRUE;
@@ -55,15 +55,21 @@ void PlayerSprite::update(const double deltaTime)
             break;
         }
     }
+
     // Calculate the potential new position based on the direction and speed
     const double potentialX = m_x + m_speed * deltaTime * horizontalDirection;
     const double potentialY = m_y + m_speed * deltaTime * verticalDirection;
 
     // Check for collision with obstacles or other sprites
-    if (m_observer.canMoveTo(this, potentialX, potentialY))
+    if (!m_observer)
+        return;
+
+    if (m_observer->canMoveTo(*this, potentialX, potentialY))
     {
-        m_position.x = static_cast<int>(potentialX);
-        m_position.y = static_cast<int>(potentialY);
+        m_x = potentialX;
+        m_y = potentialY;
+        m_position.x = static_cast<int>(m_x);
+        m_position.y = static_cast<int>(m_y);
     }
 }
 
@@ -82,6 +88,3 @@ void PlayerSprite::handleEvent(const SDL_Event& event)
         break;
     }
 }
-
-
-

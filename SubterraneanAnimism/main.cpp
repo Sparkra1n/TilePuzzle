@@ -3,14 +3,7 @@
 
 int main(int argc, char** argv)
 {
-    try 
-    {
-		Game game;
-        game.run();
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
+	Game game;
+    game.run();
     return 0;
 }

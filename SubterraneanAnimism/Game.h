@@ -36,7 +36,7 @@ public:
 
     //void notifyCollision(CollisionSprite* sprite, double& potentialX, double& potentialY) override;
 
-    bool canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY) override;
+    bool canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY) const override;
 
     void updateSprites();
 

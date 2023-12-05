@@ -1,14 +1,12 @@
 #pragma once
 
-#include <iostream>
-#include "Sprite.h"
+class CollisionSprite;
 
 class CollisionObserver
 {
 public:
-	virtual bool canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY);
-	virtual ~CollisionObserver() = default;
-protected:
-
+    CollisionObserver() {}
+    [[nodiscard]] virtual bool canMoveTo(CollisionSprite& collisionSprite, double potentialX, double potentialY) const;
+    virtual ~CollisionObserver() = default;
 };
 
