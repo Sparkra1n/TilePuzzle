@@ -5,16 +5,19 @@
 #include "SDLExceptions.h"
 #include "CollisionObserver.h"
 #include <iostream>
+#include <cmath>
 #include <unordered_set>
 
 class CollisionObserver;
 
-struct Vector2
-{
-	Vector2(const int x, const int y) : x(x), y(y) {}
-	int x;
-	int y;
-};
+//struct Vector2
+//{
+//	Vector2(const double x, const double y) : x(x), y(y) {}
+//	[[nodiscard]] double getMagnitude() const { return std::hypot(x, y); }
+//	static double magnitude(const int u, const int v) { return std::hypot(u, v); }
+//	double x{};
+//	double y{};
+//};
 
 class Sprite
 {
@@ -53,11 +56,11 @@ public:
 	 */
 	[[nodiscard]] SDL_Rect getPosition() const { return m_position; }
 
-	/**
-	 * @brief Returns the position (SDL_Rect) of the sprite.
-	 * @return
-	 */
-	[[nodiscard]] Vector2 getCoords() const { return { m_position.x, m_position.y }; }
+	///**
+	// * @brief Returns the position (SDL_Rect) of the sprite.
+	// * @return
+	// */
+	//[[nodiscard]] Vector2 getCoords() const { return { m_x, m_y }; }
 
 	/**
 	 * @brief determine if sprite is a CollisionSprite
@@ -81,6 +84,8 @@ protected:
 	static SDL_Surface* loadSurface(const char* path);
 	SDL_Surface* m_image{};
 	SDL_Rect m_position{};
+	double m_x{};
+	double m_y{};
 };
 
 class CollisionSprite : public Sprite
@@ -88,9 +93,9 @@ class CollisionSprite : public Sprite
 public:
 	CollisionSprite(const char* path) : Sprite(path) { m_observer = nullptr; }
 
-	virtual void handleEvent(const SDL_Event& event) override {};
+	virtual void handleEvent(const SDL_Event& event) override {}
 
-	virtual void update(double deltaTime) override {};
+	virtual void update(double deltaTime) override {}
 
 	/**
 	 * @brief determine if sprite is a CollisionSprite
@@ -142,6 +147,4 @@ public:
 protected:
 	std::unordered_set<SDL_Keycode> m_pressedKeys;
 	double m_speed = 1.0;
-	double m_x{};
-	double m_y{};
 };

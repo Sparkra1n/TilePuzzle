@@ -1,7 +1,5 @@
 #include "Sprite.h"
 
-#include <iostream>
-
 Sprite::Sprite(const char* path)
 {
     m_image = loadSurface(path);
@@ -32,8 +30,8 @@ bool CollisionSprite::hasCollisionWith(const Sprite& other) const
 
 void PlayerSprite::update(const double deltaTime)
 {
-    int verticalDirection = 0;
-    int horizontalDirection = 0;
+    double verticalDirection = 0;
+    double horizontalDirection = 0;
 
     for (const SDL_Keycode key : m_pressedKeys)
     {
@@ -57,10 +55,18 @@ void PlayerSprite::update(const double deltaTime)
     }
 
     // Calculate the potential new position based on the direction and speed
+	// Normalize the direction vector
+    const double magnitude = sqrt(horizontalDirection * horizontalDirection + verticalDirection * verticalDirection);
+    if (magnitude > 0)
+    {
+        horizontalDirection /= magnitude;
+        verticalDirection /= magnitude;
+    }
+
+    // Calculate the potential new position based on the normalized direction and speed
     const double potentialX = m_x + m_speed * deltaTime * horizontalDirection;
     const double potentialY = m_y + m_speed * deltaTime * verticalDirection;
 
-    // Check for collision with obstacles or other sprites
     if (!m_observer)
         return;
 
