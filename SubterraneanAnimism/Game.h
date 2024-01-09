@@ -3,13 +3,18 @@
 #include <iostream>
 #include <vector>
 #include <memory>
-#include "SDL.h"
-#include "SDL_image.h"
+#include <SDL.h>
+#include <SDL_image.h>
+
+#include "CollisionSprite.h"
 #include "SDLExceptions.h"
 #include "Sprite.h"
-#include "CollisionObserver.h"
+#include "Vector2.h"
+#include "Player.h"
+#include "Projectile.h"
+#include "Renderer.h"
 
-class Game : public CollisionObserver
+class Game : public Observer
 {
 public:
     /**
@@ -26,19 +31,15 @@ public:
       * @brief Updates the game state based on the elapsed time.
       * @param deltaTime The time elapsed since the last update.
       */
-    void update(double deltaTime) const;
+    void update(double deltaTime);
 
     /**
      * @brief Adds a CollisionSprite to the game, registering it for updates and collisions.
      * @param sprite A shared ptr reference to the CollisionSprite to be added.
      */
-    void addSprite(const std::shared_ptr<CollisionSprite>& sprite);
+    void addEntity(const std::shared_ptr<Entity>& sprite);
 
-    //void notifyCollision(CollisionSprite* sprite, double& potentialX, double& potentialY) override;
-
-    [[nodiscard]] bool canMoveTo(const CollisionSprite& collisionSprite, double potentialX, double potentialY) const override;
-
-    void updateSprites();
+    [[nodiscard]] bool canMoveTo(const Entity& entity) const override;
 
     /**
      * @brief Constructs a Game instance, initializing SDL and creating a window.
@@ -50,15 +51,16 @@ public:
      */
     ~Game() override;
 private:
-    std::vector<std::shared_ptr<Sprite>> m_sprites; // Collection of sprites in the game.
-	std::shared_ptr<PlayerSprite> m_player;         // Player sprite
-    std::shared_ptr<CollisionSprite> m_rectangle;
+    std::vector<std::shared_ptr<Entity>> m_entities;             // Collection of sprites in the game
+	std::shared_ptr<Player> m_player;                            // Player sprite
+    std::shared_ptr<Sprite<RectangularCollision>> m_rectangle;   // Example collider
+    std::shared_ptr<Sprite<NoCollision>> m_projectile;           // Example Projectile
+
     SDL_Window* m_window{};                         // SDL window instance
     SDL_Surface* m_windowSurface{};                 // SDL window surface
     SDL_Event m_windowEvent{};                      // SDL event for window handling
 
-    //SDL_Renderer* m_renderer{};
-    //SDL_Event m_event{};
+    //std::unique_ptr<Renderer> m_renderer{};
 
     int m_screenWidth = 640;
     int m_screenHeight = 480;

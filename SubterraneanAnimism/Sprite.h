@@ -3,148 +3,155 @@
 #include "SDL.h"
 #include "SDL_image.h"
 #include "SDLExceptions.h"
-#include "CollisionObserver.h"
+#include "Entity.h"
+#include "Vector2.h"
+#include "Observer.h"
+#include <vector>
 #include <iostream>
-#include <cmath>
-#include <unordered_set>
 
-class CollisionObserver;
+struct NoCollision;
+struct RectangularCollision;
+struct PolygonCollision;
 
-//struct Vector2
-//{
-//	Vector2(const double x, const double y) : x(x), y(y) {}
-//	[[nodiscard]] double getMagnitude() const { return std::hypot(x, y); }
-//	static double magnitude(const int u, const int v) { return std::hypot(u, v); }
-//	double x{};
-//	double y{};
-//};
+template <typename T>
+struct IsAllowedCollisionMethod : std::disjunction<
+    std::is_same<T, NoCollision>,
+    std::is_same<T, RectangularCollision>,
+    std::is_same<T, PolygonCollision>
+> {};
 
-class Sprite
+template <typename CollisionDetectionMethod,
+std::enable_if_t<IsAllowedCollisionMethod<CollisionDetectionMethod>::value, bool> = true
+>
+class Sprite : public Entity
 {
 public:
-	/**
-	 * @brief Create sprite from file path
-	 * @param path - relative or absolute path
-	 */
-	Sprite(const char* path);
+    Sprite(const char* path, const Observer* observer = nullptr) : m_observer(observer)
+    {
+        m_image = loadSurface(path);
 
-	Sprite() = default;
+        m_position.w = m_image->w;
+        m_position.h = m_image->h;
+    }
 
-	virtual ~Sprite() = default;
+    Sprite(const Sprite& other) 
+        : m_observer(other.m_observer), 
+          m_position(other.m_position), 
+          m_coordinates(other.m_coordinates)
+    {
+        m_image = SDL_ConvertSurface(other.m_image, other.m_image->format, 0);
+        if (!m_image)
+            throw SDLImageLoadException(SDL_GetError());
+    }
 
-	/**
-	 * @brief Virtual function for updating the sprite's state
-	 * @param deltaTime time elapsed for each frame
-	 */
-	virtual void update(double deltaTime) = 0;
+    ~Sprite() override
+    {
+        SDL_FreeSurface(m_image);
+    }
 
-	/**
-	 * @brief Virtual function for drawing the sprite onto the specified SDL surface
-	 * @param windowSurface 
-	 */
-	virtual void draw(SDL_Surface* windowSurface);
+    void update(double deltaTime) override
+    {
+        // Update logic goes here
+    }
 
-	/**
-	 * @brief Virtual function for handling SDL events
-	 * @param event 
-	 */
-	virtual void handleEvent(const SDL_Event& event) = 0;
+    void draw(SDL_Surface* windowSurface) override
+    {
+        SDL_BlitSurface(m_image, nullptr, windowSurface, &m_position);
+    }
 
-	/**
-	 * @brief Returns the position (SDL_Rect) of the sprite.
-	 * @return 
-	 */
-	[[nodiscard]] SDL_Rect getPosition() const { return m_position; }
+    void setScreenPosition(int x, int y) override
+    {
+        m_position.x = x;
+        m_position.y = y;
+    }
 
-	///**
-	// * @brief Returns the position (SDL_Rect) of the sprite.
-	// * @return
-	// */
-	//[[nodiscard]] Vector2 getCoords() const { return { m_x, m_y }; }
+    void setCoordinates(const Vector2<double> coordinates) override
+    {
+        m_coordinates = coordinates;
+    }
 
-	/**
-	 * @brief determine if sprite is a CollisionSprite
-	 * @return 
-	 */
-	virtual bool isCollisionSprite() { return false; }
+    [[nodiscard]] bool hasCollisionWith(const Entity& other)
+    {
+        if (other.isSpecializedSprite())
+        {
+            const Sprite<CollisionDetectionMethod>* spriteOther = static_cast<const Sprite<CollisionDetectionMethod>*>(&other);
+            if (spriteOther)
+                return CollisionDetectionMethod::hasCollisionWith(*this, *spriteOther);
+        }
+        return false;
+    }
 
-	/**
-	 * @brief Determine if this CollisionSprite collides with another CollisionSprite
-	 * @param other
-	 * @return bool
-	 */
-	[[nodiscard]] virtual bool hasCollisionWith(const Sprite& other) const { return false; }
+    [[nodiscard]] bool isCollisionSprite() const
+    {
+        return !std::is_same_v<NoCollision, CollisionDetectionMethod>;
+    }
 
-	/**
-	 * @brief Set the position of the sprite
-	 *
-	 */
-	void setPosition(const int x, const int y) { m_position.x = x; m_position.y = y; }
-protected:
-	static SDL_Surface* loadSurface(const char* path);
-	SDL_Surface* m_image{};
-	SDL_Rect m_position{};
-	double m_x{};
-	double m_y{};
+    [[nodiscard]] virtual bool isSpecializedSprite() const override { return true; }
+
+    [[nodiscard]] SDL_Rect getScreenPosition() const override
+    {
+        return m_position;
+    }
+
+    [[nodiscard]] const Observer* getCollisionObserver()
+    {
+        return m_observer;
+    }
+
+    [[nodiscard]] Vector2<double> getCoordinates() override
+    {
+        return m_coordinates;
+    }
+
+private:
+    const Observer* m_observer;
+    SDL_Rect m_position{};
+    Vector2<double> m_coordinates{};
+    SDL_Surface* m_image{};
+
+    static SDL_Surface* loadSurface(const char* path)
+    {
+        SDL_Surface* surface = SDL_LoadBMP(path);
+        if (!surface)
+            throw SDLImageLoadException(SDL_GetError());
+        return surface;
+    }
 };
 
-class CollisionSprite : public Sprite
+struct NoCollision
 {
-public:
-	CollisionSprite(const char* path) : Sprite(path) { m_observer = nullptr; }
-
-	virtual void handleEvent(const SDL_Event& event) override {}
-
-	virtual void update(double deltaTime) override {}
-
-	/**
-	 * @brief determine if sprite is a CollisionSprite
-	 * @return
-	 */
-	bool isCollisionSprite() override { return true; }
-
-	/**
-	 * @brief determine if this CollisionSprite collides with another CollisionSprite
-	 * @param other 
-	 * @return bool
-	 */
-	[[nodiscard]] bool hasCollisionWith(const Sprite& other) const override;
-
-	/**
-	 * @brief Sets the observer for the CollisionSprite, allowing it to receive collision notifications.
-	 * @param observer A reference to the CollisionObserver to be set as the observer.
-	 */
-	void setObserver(const CollisionObserver* observer) { m_observer = observer; }
-
-protected:
-	const CollisionObserver* m_observer; // Class that will determine collisions
+    template <typename T>
+    static bool hasCollisionWith(const Sprite<NoCollision>& self, const T& other)
+    {
+        return false;
+    }
 };
 
-class PlayerSprite : public CollisionSprite
+struct RectangularCollision
 {
-public:
-	PlayerSprite(const char* path, const double speed = 1.0) : CollisionSprite(path), m_speed(speed) {}
-	~PlayerSprite() override = default;
-	void update(double deltaTime) override;
+    template <typename T, typename = std::enable_if_t<std::is_base_of<Entity, T>::value>>
+    static bool hasCollisionWith(const Sprite<RectangularCollision>& self, const T& other)
+    {
+        return false;
+    }
 
-	/**
-	 * @brief Handles player events such as keypresses.
-	 * @param event
-	 */
-	void handleEvent(const SDL_Event& event) override;
+    template <>
+    static bool hasCollisionWith(const Sprite<RectangularCollision>& self, const Sprite<RectangularCollision>& other)
+    {
+        if (other.isCollisionSprite())
+        {
+            const SDL_Rect selfRect = self.getScreenPosition();
+            const SDL_Rect otherRect = other.getScreenPosition();
+            return SDL_HasIntersection(&selfRect, &otherRect) == SDL_TRUE;
+        }
+        return false;
+    }
+};
 
-	/**
-	 * @brief Sets the speed of the player sprite.
-	 * @param speed
-	 */
-	void setSpeed(const double speed) { m_speed = speed; }
-	
-	/**
-	 * @brief Returns the speed of the player sprite.
-	 * @return
-	 */
-	[[nodiscard]] double getSpeed() const { return m_speed; }
-protected:
-	std::unordered_set<SDL_Keycode> m_pressedKeys;
-	double m_speed = 1.0;
+struct PolygonCollision
+{
+    static bool hasCollisionWith(const Entity& self, const Entity& other)
+    {
+        return false; // Placeholder, replace with actual logic
+    }
 };
