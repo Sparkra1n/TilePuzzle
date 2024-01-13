@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CollisionSprite.h"
 #include "Vector2.h"
 #include "Sprite.h"
 #include <unordered_set>
@@ -20,7 +19,7 @@ public:
 
     void setSpeed(const double speed) { m_speed = speed; }
 
-    void setScreenPosition(int x, int y) override { m_sprite.setScreenPosition(x, y); }
+    void setDimensions(int x, int y) override { m_sprite.setDimensions(x, y); }
 
     void setCoordinates(const Vector2<double> coordinates) override { m_sprite.setCoordinates(coordinates); }
     
@@ -32,7 +31,7 @@ public:
 
     [[nodiscard]] bool isSpecializedSprite() const override { return false; }
 
-    [[nodiscard]] bool hasCollisionWith(const Entity& other) override { return m_sprite.hasCollisionWith(other); }
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override { return m_sprite.hasCollisionWith(other, potentialPosition); }
 
 private:
     std::unordered_set<SDL_Keycode> m_pressedKeys;

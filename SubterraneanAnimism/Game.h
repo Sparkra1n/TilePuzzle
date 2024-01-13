@@ -5,8 +5,6 @@
 #include <memory>
 #include <SDL.h>
 #include <SDL_image.h>
-
-#include "CollisionSprite.h"
 #include "SDLExceptions.h"
 #include "Sprite.h"
 #include "Vector2.h"
@@ -39,7 +37,7 @@ public:
      */
     void addEntity(const std::shared_ptr<Entity>& sprite);
 
-    [[nodiscard]] bool canMoveTo(const Entity& entity) const override;
+    [[nodiscard]] bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
 
     /**
      * @brief Constructs a Game instance, initializing SDL and creating a window.

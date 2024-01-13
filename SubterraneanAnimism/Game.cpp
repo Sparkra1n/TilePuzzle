@@ -23,9 +23,9 @@ Game::Game()
         throw SDLInitializationException(SDL_GetError());
 
 	// Load sprites
-    m_player = std::make_shared<Player>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp", this);
+    m_player = std::make_shared<Player>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp", this, 5);
 	m_rectangle = std::make_shared<Sprite<RectangularCollision>>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/rectangle.bmp", this);
-    m_rectangle->setScreenPosition(200, 200);
+    m_rectangle->setCoordinates({ 200, 200 });
 
     addEntity(m_player);
     addEntity(m_rectangle);
@@ -70,7 +70,7 @@ void Game::addEntity(const std::shared_ptr<Entity>& entity)
     m_entities.push_back(entity);
 }
 
-bool Game::canMoveTo(const Entity& entity) const
+bool Game::canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const
 {
     for (const auto& other : m_entities)
     {
@@ -79,11 +79,13 @@ bool Game::canMoveTo(const Entity& entity) const
 
         if (other->isSpecializedSprite())
         {
+            // TODO: implement potentialPosition
+            
             //const Sprite<RectangularCollision>* x = dynamic_cast<const Sprite<RectangularCollision>*>(other.get());
             //if (x)
             //    std::cout << "it should call the right one\n";
 
-            bool a = other->hasCollisionWith(entity);
+            bool a = entity.hasCollisionWith(*other, potentialPosition);
             std::cout << "hasCollision: " << a << "\n";
             if (a)
                 return false;

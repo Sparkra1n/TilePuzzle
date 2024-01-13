@@ -59,7 +59,7 @@ public:
         SDL_BlitSurface(m_image, nullptr, windowSurface, &m_position);
     }
 
-    void setScreenPosition(int x, int y) override
+    void setDimensions(int x, int y) override
     {
         m_position.x = x;
         m_position.y = y;
@@ -68,15 +68,16 @@ public:
     void setCoordinates(const Vector2<double> coordinates) override
     {
         m_coordinates = coordinates;
+        m_position.x = static_cast<int>(coordinates.x);
+        m_position.y = static_cast<int>(coordinates.y);
     }
 
-    [[nodiscard]] bool hasCollisionWith(const Entity& other)
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const
     {
         if (other.isSpecializedSprite())
         {
             const Sprite<CollisionDetectionMethod>* spriteOther = static_cast<const Sprite<CollisionDetectionMethod>*>(&other);
-            if (spriteOther)
-                return CollisionDetectionMethod::hasCollisionWith(*this, *spriteOther);
+            return CollisionDetectionMethod::hasCollisionWith(*this, *spriteOther, potentialPosition);
         }
         return false;
     }
@@ -121,7 +122,7 @@ private:
 struct NoCollision
 {
     template <typename T>
-    static bool hasCollisionWith(const Sprite<NoCollision>& self, const T& other)
+    static bool hasCollisionWith(const Sprite<NoCollision>& self, const T& other, Vector2<double> potentialPosition)
     {
         return false;
     }
@@ -130,19 +131,37 @@ struct NoCollision
 struct RectangularCollision
 {
     template <typename T, typename = std::enable_if_t<std::is_base_of<Entity, T>::value>>
-    static bool hasCollisionWith(const Sprite<RectangularCollision>& self, const T& other)
+    static bool hasCollisionWith(const Sprite<RectangularCollision>& self, const T& other, Vector2<double> potentialPosition)
     {
         return false;
     }
 
     template <>
-    static bool hasCollisionWith(const Sprite<RectangularCollision>& self, const Sprite<RectangularCollision>& other)
+    static bool hasCollisionWith(const Sprite<RectangularCollision>& self, const Sprite<RectangularCollision>& other, Vector2<double> potentialPosition)
     {
         if (other.isCollisionSprite())
         {
-            const SDL_Rect selfRect = self.getScreenPosition();
+            //const SDL_Rect selfRect = self.getScreenPosition();
+            SDL_Rect selfRect = self.getScreenPosition();
+            selfRect.x = potentialPosition.x;
+            selfRect.y = potentialPosition.y;
             const SDL_Rect otherRect = other.getScreenPosition();
-            return SDL_HasIntersection(&selfRect, &otherRect) == SDL_TRUE;
+
+#ifdef DEBUG
+            std::cout << "selfRect:"
+                << " x: " << selfRect.x
+                << " y: " << selfRect.y
+                << " w: " << selfRect.w
+                << " h: " << selfRect.h << "\n";
+
+            std::cout << "otherRect: x: " << otherRect.x
+                << " y: " << otherRect.y
+                << " w: " << otherRect.w
+                << " h: " << otherRect.h << "\n";
+#endif
+            bool a = SDL_HasIntersection(&selfRect, &otherRect) == SDL_TRUE;
+            std::cout << "a: " << a << "\n";
+            return a;
         }
         return false;
     }
@@ -150,7 +169,7 @@ struct RectangularCollision
 
 struct PolygonCollision
 {
-    static bool hasCollisionWith(const Entity& self, const Entity& other)
+    static bool hasCollisionWith(const Entity& self, const Entity& other, Vector2<double> potentialPosition) 
     {
         return false; // Placeholder, replace with actual logic
     }

@@ -39,18 +39,15 @@ void Player::update(const double deltaTime)
     if (m_sprite.getCollisionObserver() == nullptr)
         return;
 
-    //TODO: need to refactor maybe
-    Sprite<RectangularCollision> potentialSprite = m_sprite;
-    potentialSprite.setCoordinates(potentialPosition);
-    bool b = m_sprite.getCollisionObserver()->canMoveTo(potentialSprite);
-    //std::cout << b << "\n";
+    bool b = m_sprite.getCollisionObserver()->canMoveTo(m_sprite, potentialPosition);
+    std::cout << "potentialPosition" << potentialPosition << "\n";
     if (b)
     {
         // Update exact position
         m_sprite.setCoordinates(potentialPosition);
 
         // Update screen position
-        m_sprite.setScreenPosition(static_cast<int>(potentialPosition.x), static_cast<int>(potentialPosition.y));
+        //m_sprite.setDimensions(static_cast<int>(potentialPosition.x), static_cast<int>(potentialPosition.y));
     }
 
     // Collisions will result in the object sliding along the surface if the player comes an angle != 90 degrees
