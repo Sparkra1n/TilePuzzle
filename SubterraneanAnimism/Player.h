@@ -8,7 +8,7 @@ class Player: public Entity
 {
 public:
     Player(const char* path, const Observer* observer = nullptr, const double speed = 1.0)
-        : m_speed(speed), m_sprite(path, observer) {}
+        : m_sprite(path, observer), m_speed(speed) {}
     ~Player() = default;
 
     void handleEvent(const SDL_Event& event);
@@ -19,7 +19,7 @@ public:
 
     void setSpeed(const double speed) { m_speed = speed; }
 
-    void setDimensions(int x, int y) override { m_sprite.setDimensions(x, y); }
+    void setDimensions(const int x, const int y) override { m_sprite.setDimensions(x, y); }
 
     void setCoordinates(const Vector2<double> coordinates) override { m_sprite.setCoordinates(coordinates); }
     
@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] bool isSpecializedSprite() const override { return false; }
 
-    [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override { return m_sprite.hasCollisionWith(other, potentialPosition); }
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const override { return m_sprite.hasCollisionWith(other, potentialPosition); }
 
 private:
     std::unordered_set<SDL_Keycode> m_pressedKeys;

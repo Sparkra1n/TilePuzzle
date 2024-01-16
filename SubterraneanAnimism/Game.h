@@ -15,39 +15,13 @@
 class Game : public Observer
 {
 public:
-    /**
-     * @brief Draws the game window, updating the display.
-     */
-    void draw();
-
-    /**
-       * @brief Runs the game loop, handling events, updating, and drawing continuously.
-       */
-    void run();
-
-    /**
-      * @brief Updates the game state based on the elapsed time.
-      * @param deltaTime The time elapsed since the last update.
-      */
-    void update(double deltaTime);
-
-    /**
-     * @brief Adds a CollisionSprite to the game, registering it for updates and collisions.
-     * @param sprite A shared ptr reference to the CollisionSprite to be added.
-     */
-    void addEntity(const std::shared_ptr<Entity>& sprite);
-
-    [[nodiscard]] bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
-
-    /**
-     * @brief Constructs a Game instance, initializing SDL and creating a window.
-     */
     Game();
-
-    /**
-     * @brief Destructs the Game instance, freeing resources.
-     */
     ~Game() override;
+    void draw();
+    void run();
+    void update(double deltaTime);
+    void addEntity(const std::shared_ptr<Entity>& entity);
+    [[nodiscard]] bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
 private:
     std::vector<std::shared_ptr<Entity>> m_entities;             // Collection of sprites in the game
 	std::shared_ptr<Player> m_player;                            // Player sprite

@@ -79,15 +79,7 @@ bool Game::canMoveTo(const Entity& entity, Vector2<double> potentialPosition) co
 
         if (other->isSpecializedSprite())
         {
-            // TODO: implement potentialPosition
-            
-            //const Sprite<RectangularCollision>* x = dynamic_cast<const Sprite<RectangularCollision>*>(other.get());
-            //if (x)
-            //    std::cout << "it should call the right one\n";
-
-            bool a = entity.hasCollisionWith(*other, potentialPosition);
-            std::cout << "hasCollision: " << a << "\n";
-            if (a)
+            if (entity.hasCollisionWith(*other, potentialPosition))
                 return false;
         }
     }
