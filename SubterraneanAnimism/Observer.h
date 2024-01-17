@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SDL.h>
-#include <functional>
 #include "Entity.h"
 
 class Observer

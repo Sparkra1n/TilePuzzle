@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] bool isSpecializedSprite() const override { return false; }
 
-    [[nodiscard]] bool hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const override { return m_sprite.hasCollisionWith(other, potentialPosition); }
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const { return m_sprite.hasCollisionWith(other, potentialPosition); }
 
 private:
     std::unordered_set<SDL_Keycode> m_pressedKeys;

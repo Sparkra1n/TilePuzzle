@@ -1,6 +1,5 @@
 #include "Game.h"
 #include <algorithm>
-#include <functional>
 
 Game::Game()
 {
@@ -23,10 +22,17 @@ Game::Game()
         throw SDLInitializationException(SDL_GetError());
 
 	// Load sprites
-    m_player = std::make_shared<Player>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp", this, 5);
-	m_rectangle = std::make_shared<Sprite<RectangularCollision>>("C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/rectangle.bmp", this);
+    m_player = std::make_shared<Player>(
+        "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/sword.bmp",
+        this,
+        5
+    );
+	m_rectangle = std::make_shared<Sprite<RectangularCollision>>(
+        "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/rectangle.bmp",
+        this
+    );
     m_rectangle->setCoordinates({ 200, 200 });
-
+    std::cout << m_rectangle->getPixelAlpha(1,1) << "\n";
     addEntity(m_player);
     addEntity(m_rectangle);
 }

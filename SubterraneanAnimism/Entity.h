@@ -16,5 +16,5 @@ public:
     [[nodiscard]] virtual bool isSpecializedSprite() const { return false; }
     [[nodiscard]] virtual SDL_Rect getScreenPosition() const = 0;
     [[nodiscard]] virtual Vector2<double> getCoordinates() = 0;
-    [[nodiscard]] virtual bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const = 0;
+    [[nodiscard]] virtual bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const { return false; }
 };

@@ -39,9 +39,7 @@ void Player::update(const double deltaTime)
     if (m_sprite.getCollisionObserver() == nullptr)
         return;
 
-    bool b = m_sprite.getCollisionObserver()->canMoveTo(m_sprite, potentialPosition);
-    std::cout << "potentialPosition" << potentialPosition << "\n";
-    if (b)
+    if (m_sprite.getCollisionObserver()->canMoveTo(m_sprite, potentialPosition))
     {
         // Update exact position
         m_sprite.setCoordinates(potentialPosition);

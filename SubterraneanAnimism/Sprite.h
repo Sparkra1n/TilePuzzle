@@ -7,7 +7,9 @@
 #include "Vector2.h"
 #include "Observer.h"
 #include <vector>
-#include <iostream>
+
+#include "Sprite.h"
+#include "Sprite.h"
 
 struct NoCollision;
 struct RectangularCollision;
@@ -76,12 +78,24 @@ public:
         return false;
     }
 
+    Uint8 getPixelAlpha(const int x, const int y) const
+    {
+        // Ensure x and y are within bounds
+        if (x >= 0 && x < m_image->w && y >= 0 && y < m_image->h)
+        {
+            const Uint32 pixel = static_cast<Uint32*>(m_image->pixels)[y * m_image->w + x];
+            return static_cast<Uint8>((pixel & m_image->format->Amask) >> m_image->format->Ashift);
+
+        }
+        return 0;
+    }
+
     [[nodiscard]] virtual bool isCollisionSprite() const { return false; }
     [[nodiscard]] bool isSpecializedSprite() const override { return true; }
     [[nodiscard]] SDL_Rect getScreenPosition() const override { return m_position; }
     [[nodiscard]] Vector2<double> getCoordinates() override { return m_coordinates; }
 
-private:
+protected:
     static SDL_Surface* loadSurface(const char* path)
     {
         SDL_Surface* surface = SDL_LoadBMP(path);
@@ -108,15 +122,6 @@ public:
 };
 
 template <>
-class Sprite<PolygonCollision> : SpriteBase<PolygonCollision>
-{
-    [[nodiscard]] bool isCollisionSprite() const
-    {
-        return true;
-    }
-};
-
-template <>
 class Sprite<RectangularCollision> : public SpriteBase<RectangularCollision>
 {
 public:
@@ -124,14 +129,70 @@ public:
         : SpriteBase(path), m_observer(observer) {}
 
     [[nodiscard]] const Observer* getCollisionObserver() const { return m_observer; }
+
+    [[nodiscard]] bool isCollisionSprite() const override { return true;  }
+
 private:
+    const Observer* m_observer;
+};
+
+template<>
+class Sprite<PolygonCollision> : public SpriteBase<PolygonCollision>
+{
+public:
+    Sprite(const char* path, const Observer* observer)
+        : SpriteBase(path), m_observer(observer) {}
+
+    [[nodiscard]] const Observer* getCollisionObserver() const { return m_observer; }
+
+    [[nodiscard]] bool isCollisionSprite() const override { return true; }
+
+private:
+    //Uint8 getPixelAlpha(const int x, const int y) const
+    //{
+    //    // Ensure x and y are within bounds
+    //    if (x >= 0 && x < m_image->w && y >= 0 && y < m_image->h)
+    //    {
+    //        const Uint32 pixel = static_cast<Uint32*>(m_image->pixels)[y * m_image->w + x];
+    //        return static_cast<Uint8>((pixel & m_image->format->Amask) >> m_image->format->Ashift);
+
+    //    }
+    //    return 0;
+    //}
+
+    [[nodiscard]] std::vector<SDL_Rect> slice(const int thickness) const
+    {
+        std::vector<SDL_Rect> slices;
+        if (thickness <= 0)
+            return slices;
+
+        const int numSlicesX = m_position.w / thickness;
+        const int numSlicesY = m_position.h / thickness;
+
+        for (int i = 0; i < numSlicesY; ++i)
+        {
+            for (int j = 0; j < numSlicesX; ++j)
+            {
+                SDL_Rect sliceRect{};
+                sliceRect.x = m_position.x + j * thickness;
+                sliceRect.y = m_position.y + i * thickness;
+                sliceRect.w = thickness;
+                sliceRect.h = thickness;
+                slices.push_back(sliceRect);
+            }
+        }
+        return slices;
+    }
     const Observer* m_observer;
 };
 
 struct NoCollision
 {
-    template <typename T>
-    static bool hasCollisionWith(const Sprite<NoCollision>& self, const T& other, Vector2<double> potentialPosition)
+    template <typename T, typename = std::enable_if_t<std::is_base_of_v<Entity, T>>>
+    static bool hasCollisionWith(
+        const T& self,
+        const T& other,
+        Vector2<double> potentialPosition)
     {
         return false;
     }
@@ -140,13 +201,18 @@ struct NoCollision
 struct RectangularCollision
 {
     template <typename T, typename = std::enable_if_t<std::is_base_of_v<Entity, T>>>
-    static bool hasCollisionWith(const SpriteBase<RectangularCollision>& self, const T& other, Vector2<double> potentialPosition)
+    static bool hasCollisionWith(
+        const SpriteBase<RectangularCollision>& self,
+        const T& other,
+        Vector2<double> potentialPosition)
     {
         return false;
     }
 
-    template <>
-    static bool hasCollisionWith(const SpriteBase<RectangularCollision>& self, const SpriteBase<RectangularCollision>& other, Vector2<double> potentialPosition)
+    static bool hasCollisionWith(
+        const SpriteBase<RectangularCollision>& self,
+        const SpriteBase<RectangularCollision>& other,
+        const Vector2<double> potentialPosition)
     {
         if (other.isCollisionSprite())
         {
@@ -163,7 +229,10 @@ struct RectangularCollision
 struct PolygonCollision
 {
     template <typename T>
-    static bool hasCollisionWith(const SpriteBase<T>& self, const SpriteBase<T>& other, Vector2<double> potentialPosition) 
+    static bool hasCollisionWith(
+        const SpriteBase<T>& self, 
+        const SpriteBase<T>& other, 
+        Vector2<double> potentialPosition)
     {
         return false; // Placeholder, replace with actual logic
     }
