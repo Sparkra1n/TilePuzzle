@@ -31,6 +31,8 @@ void Player::update(const double deltaTime)
     const double magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
     if (magnitude > 0)
         direction /= magnitude;
+    else
+        return;
 
     // Calculate the potential new position based on the normalized direction and speed
     const Vector2<double> potentialPosition = m_sprite.getCoordinates() + direction * m_speed * deltaTime;

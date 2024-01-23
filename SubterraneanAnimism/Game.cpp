@@ -1,5 +1,6 @@
 #include "Game.h"
-#include <algorithm>
+
+#include "FPSCounter.h"
 
 Game::Game()
 {
@@ -16,10 +17,7 @@ Game::Game()
     if (m_window == nullptr)
         throw SDLInitializationException(SDL_GetError());
 
-    // Create window surface
-    m_windowSurface = SDL_GetWindowSurface(m_window);
-    if (m_windowSurface == nullptr)
-        throw SDLInitializationException(SDL_GetError());
+    m_renderer = std::make_unique<Renderer>(m_window, -1, SDL_RENDERER_ACCELERATED);
 
 	// Load sprites
     m_player = std::make_shared<Player>(
@@ -27,27 +25,35 @@ Game::Game()
         this,
         5
     );
-	m_rectangle = std::make_shared<Sprite<RectangularCollision>>(
-        "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/rectangle.bmp",
+	//m_rectangle = std::make_shared<Sprite<RectangularCollision>>(
+ //       "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/rectangle.bmp",
+ //       this
+ //   );
+ //   m_rectangle->setCoordinates({ 200, 200 });
+
+    m_curvy = std::make_shared<Sprite<PolygonCollision>> (
+        "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/curvy.bmp",
         this
     );
-    m_rectangle->setCoordinates({ 200, 200 });
-    std::cout << m_rectangle->getPixelAlpha(1,1) << "\n";
+    m_curvy->setCoordinates({ 200, 200 });
+    m_curvy->slice(10);
+    m_curvy->printSlices();
+    addEntity(m_curvy);
     addEntity(m_player);
-    addEntity(m_rectangle);
+    //addEntity(m_rectangle);
 }
 
-void Game::draw()
+void Game::draw() const
 {
-    SDL_FillRect(m_windowSurface, nullptr, SDL_MapRGB(m_windowSurface->format, 0, 0, 0));
-    m_player->draw(m_windowSurface);
-    m_rectangle->draw(m_windowSurface);
-    //m_projectile->draw(m_windowSurface);
+    m_renderer->setDrawColor(0, 0, 0, 255);
+    m_renderer->clear();
+    m_renderer->renderAll(m_entities);
 	SDL_UpdateWindowSurface(m_window);
 }
 
 void Game::run()
 {
+    FPSCounter fpsCounter;
     bool alive = true;
     while (alive)
     {
@@ -63,9 +69,11 @@ void Game::run()
         }
         update(1.0 / 60.0);
         draw();
+        fpsCounter.update();
+        std::cout << "FPS: " << fpsCounter.getFPS() << "\r";
     }
 }
-void Game::update(const double deltaTime) 
+void Game::update(const double deltaTime) const
 {
     for (const auto& entity : m_entities)
         entity->update(deltaTime);
@@ -76,7 +84,7 @@ void Game::addEntity(const std::shared_ptr<Entity>& entity)
     m_entities.push_back(entity);
 }
 
-bool Game::canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const
+bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPosition) const
 {
     for (const auto& other : m_entities)
     {
@@ -94,7 +102,6 @@ bool Game::canMoveTo(const Entity& entity, Vector2<double> potentialPosition) co
 
 Game::~Game()
 {
-    SDL_FreeSurface(m_windowSurface);
     SDL_DestroyWindow(m_window);
     SDL_Quit();
 }
