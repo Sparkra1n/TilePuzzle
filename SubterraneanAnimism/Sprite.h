@@ -23,28 +23,40 @@ struct IsAllowedCollisionMethod : std::disjunction<
     std::is_same<T, PolygonCollision>
 > {};
 
-template <typename CollisionDetectionMethod,
-    std::enable_if_t<IsAllowedCollisionMethod<CollisionDetectionMethod>::value, bool> = true
+template <typename T,
+    std::enable_if_t<IsAllowedCollisionMethod<T>::value, bool> = true
 >
 class SpriteBase : public Entity
 {
 public:
-    SpriteBase(const char* path, const Observer* observer = nullptr)
+	SpriteBase(const char* path, const Observer* observer = nullptr)
+		: m_texture(nullptr)
     {
-        m_image = loadSurface(path);
-        m_rect.w = m_image->w;
-        m_rect.h = m_image->h;
+        m_surface = loadSurface(path);
+        m_rect.w = m_surface->w;
+        m_rect.h = m_surface->h;
     }
 
+    SpriteBase(const SDL_Rect rect, const SDL_Color color)
+		: m_rect(rect), m_coordinates(rect.x, rect.y), m_texture(nullptr)
+	{
+        SDL_Surface* surface = SDL_CreateRGBSurface(0, rect.w, rect.h, 32, 0, 0, 0, 0);
+        if (!surface)
+            throw SDLImageLoadException(SDL_GetError());
+
+        SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, color.r, color.g, color.b, color.a));
+        m_surface = surface;
+	}
+
     SpriteBase(const SpriteBase& other)
-        : m_rect(other.m_rect), m_coordinates(other.m_coordinates)
+        : m_rect(other.m_rect), m_coordinates(other.m_coordinates), m_texture(nullptr)
     {
-        m_image = SDL_ConvertSurface(other.m_image, other.m_image->format, 0);
-        if (!m_image)
+        m_surface = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
+        if (!m_surface)
             throw SDLImageLoadException(SDL_GetError());
     }
 
-    ~SpriteBase() override { SDL_FreeSurface(m_image); }
+    ~SpriteBase() override { SDL_FreeSurface(m_surface); }
 
     void update(double deltaTime) override
     {
@@ -53,7 +65,7 @@ public:
 
     void draw(SDL_Surface* windowSurface) override
     {
-        SDL_BlitSurface(m_image, nullptr, windowSurface, &m_rect);
+        SDL_BlitSurface(m_surface, nullptr, windowSurface, &m_rect);
     }
 
     void setCoordinates(const Vector2<double> coordinates) override
@@ -67,21 +79,28 @@ public:
     {
         if (other.isSpecializedSprite())
         {
-            const auto* spriteOther = static_cast<const SpriteBase<CollisionDetectionMethod>*>(&other);
+            const auto* spriteOther = static_cast<const SpriteBase<T>*>(&other);
 
             // Call the correct collision detection method
-            return CollisionDetectionMethod::hasCollisionWith(*this, *spriteOther, potentialPosition);
+            return T::hasCollisionWith(*this, *spriteOther, potentialPosition);
         }
         return false;
     }
 
+    void cacheTexture(SDL_Renderer* renderer) override
+	{
+        if (m_texture != nullptr)
+			SDL_DestroyTexture(m_texture);
+        m_texture = SDL_CreateTextureFromSurface(renderer, m_surface);
+	}
+
     [[nodiscard]] uint8_t getPixelAlpha(const int x, const int y) const
     {
-        if (x >= 0 && x < m_image->w && y >= 0 && y < m_image->h)
+        if (x >= 0 && x < m_surface->w && y >= 0 && y < m_surface->h)
         {
             uint8_t alpha, red, green, blue;
-            SDL_GetRGBA(static_cast<uint32_t*>(m_image->pixels)[y * m_image->w + x],
-                m_image->format, &red, &green, &blue, &alpha);
+            SDL_GetRGBA(static_cast<uint32_t*>(m_surface->pixels)[y * m_surface->w + x],
+                m_surface->format, &red, &green, &blue, &alpha);
             return alpha;
         }
         return 0;
@@ -102,11 +121,35 @@ public:
         return { r, g, b, 255 };
     }
 
-    [[nodiscard]] virtual bool isCollisionSprite() const { return false; }
-    [[nodiscard]] bool isSpecializedSprite() const override { return true; }
-    [[nodiscard]] SDL_Rect getScreenPositionAndDimensions() const override { return m_rect; }
-    [[nodiscard]] Vector2<double> getCoordinates() override { return m_coordinates; }
-    [[nodiscard]] SDL_Surface* getSDLSurface() const override { return m_image; }
+    [[nodiscard]] virtual bool isCollisionSprite() const
+	{
+		return false;
+	}
+
+    [[nodiscard]] bool isSpecializedSprite() const override
+	{
+		return true;
+	}
+
+    [[nodiscard]] SDL_Rect getScreenPositionAndDimensions() const override
+	{
+		return m_rect;
+	}
+
+    [[nodiscard]] Vector2<double> getCoordinates() override
+	{
+		return m_coordinates;
+	}
+
+    [[nodiscard]] SDL_Surface* getSDLSurface() const override
+	{
+		return m_surface;
+	}
+
+    [[nodiscard]] SDL_Texture* getCachedTexture() const override
+	{
+        return m_texture;
+	}
 
 protected:
     static SDL_Surface* loadSurface(const char* path)
@@ -119,7 +162,8 @@ protected:
 
     SDL_Rect m_rect{};
     Vector2<double> m_coordinates{};
-    SDL_Surface* m_image{};
+    SDL_Surface* m_surface{};
+    SDL_Texture* m_texture;
 };
 
 template <typename CollisionDetectionMethod,
@@ -132,6 +176,9 @@ class Sprite<NoCollision> : public SpriteBase<NoCollision>
 {
 public:
     Sprite(const char* path) : SpriteBase(path) {}
+
+    // Create sprite from SDL_Rect and color
+    Sprite(const SDL_Rect rect, const SDL_Color color) : SpriteBase(rect, color) {}
 };
 
 template <>
@@ -140,6 +187,10 @@ class Sprite<RectangularCollision> : public SpriteBase<RectangularCollision>
 public:
     Sprite(const char* path, const Observer* observer)
         : SpriteBase(path), m_observer(observer) {}
+
+    // Create sprite from SDL_Rect and color
+    Sprite(const SDL_Rect rect, const SDL_Color color, const Observer* observer)
+		: SpriteBase(rect, color), m_observer(observer) {}
 
     [[nodiscard]] const Observer* getCollisionObserver() const { return m_observer; }
 
@@ -160,15 +211,14 @@ public:
 
     [[nodiscard]] bool isCollisionSprite() const override { return true; }
 
-
     // TODO: need to figure out how to prevent extra pixels from being included in the last slice
 	void slice(const int borderThickness)
     {
+        puts("called slice");
         if (borderThickness <= 0)
             return;
 
         m_slices.clear();
-        auto a = m_rect;
         for (int y = 0; y < m_rect.h; ++y)
         {
             for (int x = 0; x < m_rect.w; ++x)
@@ -177,8 +227,8 @@ public:
                 if (getPixelAlpha(x, y) > 0)
                 {
                     SDL_Rect sliceRect;
-                    sliceRect.x = x;
-                    sliceRect.y = y;
+                    sliceRect.x = x + m_rect.x;
+                    sliceRect.y = y + m_rect.y;
                     sliceRect.h = borderThickness;
 
                     // Go across and find where it transitions back to transparent or reaches the image dimensions
@@ -197,6 +247,15 @@ public:
     {
         for (const auto& [x, y, w, h] : m_slices)
             std::cout << "SDL_Rect { x: " << x << ", y: " << y << ", w: " << w << ", h: " << h << " }\n";
+    }
+
+    // Test function
+    std::vector<std::shared_ptr<Sprite<NoCollision>>> processSlices()
+    {
+        std::vector<std::shared_ptr<Sprite<NoCollision>>> slices;
+        for (const auto& slice : m_slices)
+            slices.emplace_back(std::make_shared<Sprite<NoCollision>>(slice, generateRandomColor()));
+        return slices;
     }
 
 private:
@@ -255,3 +314,4 @@ struct PolygonCollision
         return false; // Placeholder, replace with actual logic
     }
 };
+

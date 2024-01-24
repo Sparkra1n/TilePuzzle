@@ -13,11 +13,23 @@ Game::Game()
         throw SDLInitializationException(SDL_GetError());
 
     // Create window
-    m_window = SDL_CreateWindow("Subterranean Animism", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_screenWidth, m_screenHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+    m_window = SDL_CreateWindow(
+        "Subterranean Animism", 
+        SDL_WINDOWPOS_CENTERED, 
+        SDL_WINDOWPOS_CENTERED, 
+        m_screenWidth, 
+        m_screenHeight, 
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
+    );
+
     if (m_window == nullptr)
         throw SDLInitializationException(SDL_GetError());
 
-    m_renderer = std::make_unique<Renderer>(m_window, -1, SDL_RENDERER_ACCELERATED);
+    m_renderer = std::make_unique<Renderer>(
+        m_window, 
+        -1,
+        SDL_RENDERER_ACCELERATED
+    );
 
 	// Load sprites
     m_player = std::make_shared<Player>(
@@ -31,16 +43,15 @@ Game::Game()
  //   );
  //   m_rectangle->setCoordinates({ 200, 200 });
 
-    m_curvy = std::make_shared<Sprite<PolygonCollision>> (
+    m_curvy = std::make_shared<Sprite<RectangularCollision>> (
         "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/curvy.bmp",
         this
     );
     m_curvy->setCoordinates({ 200, 200 });
-    m_curvy->slice(10);
-    m_curvy->printSlices();
     addEntity(m_curvy);
     addEntity(m_player);
-    //addEntity(m_rectangle);
+    m_curvy->cacheTexture(m_renderer->getRenderer());
+    m_player->cacheTexture(m_renderer->getRenderer());
 }
 
 void Game::draw() const
@@ -67,10 +78,10 @@ void Game::run()
                 break;
             }
         }
-        update(1.0 / 60.0);
-        draw();
         fpsCounter.update();
         std::cout << "FPS: " << fpsCounter.getFPS() << "\r";
+        draw();
+        update(fpsCounter.getDeltaTime());
     }
 }
 void Game::update(const double deltaTime) const

@@ -1,0 +1,11 @@
+﻿  Game.cpp
+  main.cpp
+  Player.cpp
+  Projectile.cpp
+  Renderer.cpp
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Renderer.cpp(26,10): warning C4858: discarding return value: The result of 'std::async' should be stored in a variable. If the return value is discarded, the temporary 'std::future' is destroyed, waiting for an async result or evaluating a deferred result, thus defeating the purpose of 'std::async'.
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 1344 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  SubterraneanAnimism.vcxproj -> C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\x64\Release\SubterraneanAnimism.exe

@@ -30,6 +30,11 @@ public:
 	    m_sprite.setCoordinates(coordinates);
     }
 
+    void cacheTexture(SDL_Renderer* renderer) override
+    {
+        m_sprite.cacheTexture(renderer);
+    }
+
     [[nodiscard]] SDL_Rect getScreenPositionAndDimensions() const override
     {
 	    return m_sprite.getScreenPositionAndDimensions();
@@ -58,6 +63,11 @@ public:
     [[nodiscard]] bool hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const override
     {
 	    return m_sprite.hasCollisionWith(other, potentialPosition);
+    }
+
+    [[nodiscard]] SDL_Texture* getCachedTexture() const override
+    {
+        return m_sprite.getCachedTexture();
     }
 
 private:
