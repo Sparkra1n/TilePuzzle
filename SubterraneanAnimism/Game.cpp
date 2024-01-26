@@ -43,7 +43,7 @@ Game::Game()
  //   );
  //   m_rectangle->setCoordinates({ 200, 200 });
 
-    m_curvy = std::make_shared<Sprite<RectangularCollision>> (
+    m_curvy = std::make_shared<Sprite<PolygonCollision>> (
         "C:/Users/spark/Documents/Visual Studio 2022/Projects/SubterraneanAnimism/SubterraneanAnimism/sprites/curvy.bmp",
         this
     );
@@ -52,6 +52,14 @@ Game::Game()
     addEntity(m_player);
     m_curvy->cacheTexture(m_renderer->getRenderer());
     m_player->cacheTexture(m_renderer->getRenderer());
+    m_curvy->slice(5);
+    m_curvy->printSlices();
+    auto a = m_curvy->processSlices();
+    for (auto& b : a)
+    {
+        addEntity(b);
+        b->cacheTexture(m_renderer->getRenderer());
+    }
 }
 
 void Game::draw() const
