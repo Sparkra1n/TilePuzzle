@@ -15,37 +15,38 @@ public:
 
     void update(double deltaTime) override;
 
-    void draw(SDL_Surface* windowSurface) override
-    {
-	    m_sprite.draw(windowSurface);
-    }
-
     void setSpeed(const double speed)
     {
 	    m_speed = speed;
     }
 
-    void setCoordinates(const Vector2<double> coordinates) override
+    void setCoordinates(const Vector2<double> coordinates)
     {
 	    m_sprite.setCoordinates(coordinates);
     }
 
-    void cacheTexture(SDL_Renderer* renderer) override
+    void cacheTexture(SDL_Renderer* renderer)
     {
         m_sprite.cacheTexture(renderer);
     }
 
-    [[nodiscard]] SDL_Rect getScreenPositionAndDimensions() const override
+    //TODO: refactor player functions such as this one
+    [[nodiscard]] Sprite<PolygonCollision>* getSprite()
     {
-	    return m_sprite.getScreenPositionAndDimensions();
+        return &m_sprite;
     }
 
-    [[nodiscard]] SDL_Surface* getSDLSurface() const override
+    [[nodiscard]] SDL_Rect getSDLRect() const override
+    {
+	    return m_sprite.getSDLRect();
+    }
+
+    [[nodiscard]] SDL_Surface* getSDLSurface() const
     {
         return m_sprite.getSDLSurface();
     }
 
-    [[nodiscard]] Vector2<double> getCoordinates() override
+    [[nodiscard]] Vector2<double> getCoordinates() const
     {
 	    return m_sprite.getCoordinates();
     }
@@ -72,7 +73,7 @@ public:
 
 private:
     std::unordered_set<SDL_Keycode> m_pressedKeys;
-    Sprite<RectangularCollision> m_sprite;
+    Sprite<PolygonCollision> m_sprite;
     double m_speed = 1.0;
 };
 

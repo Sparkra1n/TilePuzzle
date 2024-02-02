@@ -152,9 +152,9 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Projectile.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Entity.h" />
     <ClInclude Include="FPSCounter.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Observer.h" />

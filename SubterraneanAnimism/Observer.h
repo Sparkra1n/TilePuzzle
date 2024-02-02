@@ -1,7 +1,9 @@
 #pragma once
 
 #include <SDL.h>
-#include "Entity.h"
+#include "Sprite.h"
+
+class Entity;
 
 class Observer
 {

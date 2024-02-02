@@ -28,8 +28,8 @@ private:
     std::shared_ptr<Sprite<RectangularCollision>> m_rectangle;   // Example collider
     std::shared_ptr<Sprite<NoCollision>> m_projectile;           // Example Projectile
     std::shared_ptr<Sprite<PolygonCollision>> m_curvy;
-    SDL_Window* m_window{};                         // SDL window instance
-    SDL_Event m_windowEvent{};                      // SDL event for window handling
+    SDL_Window* m_window{};                                     // SDL window instance
+    SDL_Event m_windowEvent{};                                  // SDL event for window handling
     int m_screenWidth = 640;
     int m_screenHeight = 480;
 	std::unique_ptr<Renderer> m_renderer;

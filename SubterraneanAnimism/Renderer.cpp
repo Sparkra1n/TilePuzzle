@@ -31,7 +31,7 @@ void Renderer::renderAsync(const std::vector<std::shared_ptr<Entity>>& entities)
     SDL_RenderClear(m_renderer.get());
     for (const auto& entity : entities)
     {
-        SDL_Rect entityRect = entity->getScreenPositionAndDimensions();
+        SDL_Rect entityRect = entity->getSDLRect();
         SDL_RenderCopy(m_renderer.get(), entity->getCachedTexture(), nullptr, &entityRect);
     }
     SDL_RenderPresent(m_renderer.get());

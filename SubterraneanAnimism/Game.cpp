@@ -52,14 +52,13 @@ Game::Game()
     addEntity(m_player);
     m_curvy->cacheTexture(m_renderer->getRenderer());
     m_player->cacheTexture(m_renderer->getRenderer());
-    m_curvy->slice(5);
-    m_curvy->printSlices();
-    auto a = m_curvy->processSlices();
-    for (auto& b : a)
-    {
-        addEntity(b);
-        b->cacheTexture(m_renderer->getRenderer());
-    }
+
+    //auto a = m_curvy->processSlices();
+    //for (auto& b : a)
+    //{
+    //    addEntity(b);
+    //    b->cacheTexture(m_renderer->getRenderer());
+    //}
 }
 
 void Game::draw() const
