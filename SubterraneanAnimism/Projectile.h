@@ -1,67 +1,30 @@
-//#pragma once
-//
-//#include "CollisionSprite.h"
-//#include <SDL.h>
-//#include <SDL_image.h>
-//
-//class Projectile : public CollisionSprite
-//{
-//public:
-//	Projectile(const char* path, const int damage, const Vector2 velocity, const SDL_Color& color)
-//		: CollisionSprite(path), m_damage(damage), m_velocity(velocity), m_color(color) {}
-//
-//	~Projectile() override = default;
-//
-//	void update(double deltaTime) override;
-//
-//	/**
-//	 * @brief Set the damage value of the projectile.
-//	 * @param damage
-//	 */
-//	void setDamage(int damage) { m_damage = damage; }
-//
-//	/**
-//	 * @brief Get the damage value of the projectile.
-//	 * @return
-//	 */
-//	[[nodiscard]] int getDamage() const { return m_damage; }
-//
-//	/**
-//	 * @brief Set the velocity of the projectile.
-//	 * @param velocity
-//	 */
-//	void setVelocity(Vector2 velocity) { m_velocity = velocity; }
-//
-//	/**
-//	 * @brief Get the velocity of the projectile.
-//	 * @return
-//	 */
-//	[[nodiscard]] Vector2 getVelocity() const { return m_velocity; }
-//
-//	/**
-//	 * @brief Set the color of the projectile.
-//	 * @param color
-//	 */
-//	void setColor(const SDL_Color& color) { m_color = color; }
-//
-//	/**
-//	 * @brief Get the color of the projectile.
-//	 * @return
-//	 */
-//	[[nodiscard]] SDL_Color getColor() const { return m_color; }
-//
-//	void handleEvent(const SDL_Event& event) override {}
-//
-//	bool hasCollisionWith(const Sprite& other) const override;
-//
-//protected:
-//	int m_damage{};
-//	Vector2 m_velocity{};
-//	SDL_Color m_color{};
-//
-//	/**
-//	 * @brief Moves the projectile based on its velocity and direction.
-//	 * @param deltaTime
-//	 */
-//	void move(double deltaTime);
-//};
+#pragma once
+
+#include <SDL.h>
+#include <SDL_image.h>
+#include "Game.h"
+#include "Sprite.h"
+
+class Projectile : public Entity
+{
+public:
+    Projectile(const char* path,
+		int damage, Vector2<double> velocity = { 0, 0 },
+        const Observer* observer = nullptr);
+
+    ~Projectile() override = default;
+    void update(double deltaTime) override;
+    void setDamage(int damage);
+    void setVelocity(Vector2<double> velocity);
+	void cacheTexture(SDL_Renderer* renderer) override;
+    [[nodiscard]] int getDamage() const;
+    [[nodiscard]] Vector2<double> getVelocity() const;
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
+    [[nodiscard]] SDL_Texture* getCachedTexture() const override;
+    [[nodiscard]] SDL_Rect getSDLRect() const override;
+
+protected:
+    Sprite<RectangularCollision> m_sprite;
+    int m_damage{};
+    Vector2<double> m_velocity{};
+};

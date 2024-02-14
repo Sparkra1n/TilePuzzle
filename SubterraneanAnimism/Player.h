@@ -12,64 +12,31 @@ public:
     ~Player() override = default;
 
     void handleEvent(const SDL_Event& event);
-
     void update(double deltaTime) override;
-
-    void setSpeed(const double speed)
-    {
-	    m_speed = speed;
-    }
-
-    void setCoordinates(const Vector2<double> coordinates)
-    {
-	    m_sprite.setCoordinates(coordinates);
-    }
-
-    void cacheTexture(SDL_Renderer* renderer)
-    {
-        m_sprite.cacheTexture(renderer);
-    }
+    void setSpeed(double speed);
+    void setCoordinates(Vector2<double> coordinates);
+    void cacheTexture(SDL_Renderer* renderer) override;
+    void clearRenderFlag() override;
+    void setRenderFlag() override;
 
     //TODO: refactor player functions such as this one
-    [[nodiscard]] Sprite<PolygonCollision>* getSprite()
-    {
-        return &m_sprite;
-    }
+    [[nodiscard]] Sprite<PolygonCollision>* getSprite();
 
-    [[nodiscard]] SDL_Rect getSDLRect() const override
-    {
-	    return m_sprite.getSDLRect();
-    }
+    [[nodiscard]] SDL_Rect getSDLRect() const override;
 
-    [[nodiscard]] SDL_Surface* getSDLSurface() const
-    {
-        return m_sprite.getSDLSurface();
-    }
+    [[nodiscard]] SDL_Surface* getSDLSurface() const;
 
-    [[nodiscard]] Vector2<double> getCoordinates() const
-    {
-	    return m_sprite.getCoordinates();
-    }
+    [[nodiscard]] Vector2<double> getCoordinates() const;
 
-    [[nodiscard]] double getSpeed() const
-    {
-	    return m_speed;
-    }
+    [[nodiscard]] double getSpeed() const;
 
-    [[nodiscard]] bool isSpecializedSprite() const override
-    {
-	    return false;
-    }
+    [[nodiscard]] bool isSpecializedSprite() const override;
 
-    [[nodiscard]] bool hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const override
-    {
-	    return m_sprite.hasCollisionWith(other, potentialPosition);
-    }
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
 
-    [[nodiscard]] SDL_Texture* getCachedTexture() const override
-    {
-        return m_sprite.getCachedTexture();
-    }
+    [[nodiscard]] SDL_Texture* getCachedTexture() const override;
+
+    [[nodiscard]] bool getRenderFlag() const override;
 
 private:
     std::unordered_set<SDL_Keycode> m_pressedKeys;

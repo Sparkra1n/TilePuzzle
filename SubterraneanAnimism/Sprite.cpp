@@ -11,7 +11,7 @@ bool Entity::isSpecializedSprite() const
 }
 
 SpriteBase::SpriteBase(const char* path, const Observer* observer)
-	: m_texture(nullptr)
+	: m_renderFlag(true), m_texture(nullptr)
 {
     m_surface = loadSurface(path);
     m_rect.w = m_surface->w;
@@ -19,7 +19,7 @@ SpriteBase::SpriteBase(const char* path, const Observer* observer)
 }
 
 SpriteBase::SpriteBase(const SDL_Rect rect, const SDL_Color color)
-        : m_rect(rect), m_coordinates(rect.x, rect.y), m_texture(nullptr)
+        : m_renderFlag(true), m_rect(rect), m_coordinates(rect.x, rect.y), m_texture(nullptr)
 {
     SDL_Surface* surface = SDL_CreateRGBSurface(0, rect.w, rect.h, 32, 0, 0, 0, 0);
     if (!surface)
@@ -30,7 +30,7 @@ SpriteBase::SpriteBase(const SDL_Rect rect, const SDL_Color color)
 }
 
 SpriteBase::SpriteBase(const SpriteBase& other)
-	: m_rect(other.m_rect), m_coordinates(other.m_coordinates), m_texture(nullptr)
+	: m_renderFlag(other.m_renderFlag), m_rect(other.m_rect), m_coordinates(other.m_coordinates), m_texture(nullptr)
 {
     m_surface = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
     if (!m_surface)
@@ -47,6 +47,7 @@ void SpriteBase::setCoordinates(const Vector2<double> coordinates)
     m_coordinates = coordinates;
     m_rect.x = static_cast<int>(coordinates.x);
     m_rect.y = static_cast<int>(coordinates.y);
+    setRenderFlag();
 }
 
 void SpriteBase::cacheTexture(SDL_Renderer* renderer)
@@ -54,9 +55,10 @@ void SpriteBase::cacheTexture(SDL_Renderer* renderer)
     if (m_texture != nullptr)
         SDL_DestroyTexture(m_texture);
     m_texture = SDL_CreateTextureFromSurface(renderer, m_surface);
+    m_renderFlag = true;
 }
 
-[[nodiscard]] uint8_t SpriteBase::getPixelAlpha(const int x, const int y) const
+uint8_t SpriteBase::getPixelAlpha(const int x, const int y) const
 {
     if (x >= 0 && x < m_surface->w && y >= 0 && y < m_surface->h)
     {
@@ -108,7 +110,7 @@ SDL_Surface* SpriteBase::getSDLSurface() const
     return m_surface;
 }
 
-[[nodiscard]] SDL_Texture* SpriteBase::getCachedTexture() const
+SDL_Texture* SpriteBase::getCachedTexture() const
 {
     return m_texture;
 }
@@ -120,6 +122,22 @@ SDL_Surface* SpriteBase::loadSurface(const char* path)
         throw SDLImageLoadException(SDL_GetError());
     return surface;
 }
+
+void SpriteBase::setRenderFlag()
+{
+    m_renderFlag = true;
+}
+
+void SpriteBase::clearRenderFlag()
+{
+    m_renderFlag = false;
+}
+
+bool SpriteBase::getRenderFlag() const
+{
+    return m_renderFlag;
+}
+
 
 // Sprite<NoCollision>
 

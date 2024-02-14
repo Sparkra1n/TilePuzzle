@@ -7,76 +7,72 @@
 template <typename T>
 struct Vector2
 {
-	T x{};
-	T y{};
+    T x{};
+    T y{};
 
-	Vector2(const T x, const T y) : x(x), y(y) {}
-	Vector2() { x = 0.0; y = 0.0; }
+    constexpr Vector2(const T x, const T y) : x(x), y(y) {}
+    constexpr Vector2() : x(0.0), y(0.0) {}
 
-	/**
-	 * @brief Returns the unit vector
-	 * @return Vector2
-	 */
-	[[nodiscard]] Vector2 unit() const
-	{
-		const double magnitude = sqrt(x * x + y * y);
-		return { x / magnitude, y / magnitude };
-	}
-	/**
-	 * @brief Returns the dot product with another vector
-	 * @return double
-	 */
-	[[nodiscard]] T dot(const Vector2& other) const
-	{
-		return x * other.x + y * other.y;
-	}
+    template <typename U>
+    constexpr Vector2(const Vector2<U>& other) : x(static_cast<T>(other.x)), y(static_cast<T>(other.y)) {}
 
-    Vector2 operator+(const Vector2& other) const
-	{
+    [[nodiscard]] constexpr Vector2 unit() const
+    {
+        constexpr double magnitude = std::sqrt(x * x + y * y);
+        return { x / magnitude, y / magnitude };
+    }
+
+    [[nodiscard]] constexpr T dot(const Vector2& other) const
+    {
+        return x * other.x + y * other.y;
+    }
+
+    constexpr Vector2 operator+(const Vector2& other) const
+    {
         return Vector2(x + other.x, y + other.y);
     }
 
-    Vector2& operator+=(const Vector2& other)
-	{
+    constexpr Vector2& operator+=(const Vector2& other)
+    {
         x += other.x;
         y += other.y;
         return *this;
     }
 
-    Vector2 operator-(const Vector2& other) const
-	{
+    constexpr Vector2 operator-(const Vector2& other) const
+    {
         return Vector2(x - other.x, y - other.y);
     }
 
-    Vector2& operator-=(const Vector2& other)
-	{
+    constexpr Vector2& operator-=(const Vector2& other)
+    {
         x -= other.x;
         y -= other.y;
         return *this;
     }
 
-    Vector2 operator*(T scalar) const
-	{
+    constexpr Vector2 operator*(T scalar) const
+    {
         return Vector2(x * scalar, y * scalar);
     }
 
-    Vector2& operator*=(T scalar)
-	{
+    constexpr Vector2& operator*=(T scalar)
+    {
         x *= scalar;
         y *= scalar;
         return *this;
     }
 
-    Vector2 operator/(T scalar) const
-	{
-        if (scalar == 0) 
+    constexpr Vector2 operator/(T scalar) const
+    {
+        if (scalar == 0)
             throw std::exception("Error: Division by zero");
         return Vector2<T>(x / scalar, y / scalar);
     }
 
-    Vector2& operator/=(T scalar)
-	{
-        if (scalar == 0) 
+    constexpr Vector2& operator/=(T scalar)
+    {
+        if (scalar == 0)
             throw std::exception("Error: Division by zero");
         x /= scalar;
         y /= scalar;

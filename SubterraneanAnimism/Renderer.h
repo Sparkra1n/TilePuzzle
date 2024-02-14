@@ -6,6 +6,7 @@
 #include <thread>
 #include <vector>
 #include "Sprite.h"
+#include "Tile.h"
 
 struct RendererDeleter
 {
@@ -18,8 +19,7 @@ public:
     Renderer(SDL_Window* window, int rendererIndex, uint32_t rendererFlags);
     ~Renderer();
     [[nodiscard]] SDL_Renderer* getRenderer() const;
-    void renderAll(std::vector<std::shared_ptr<Entity>> entities);
-    void setDrawColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a) const;
+    void renderAll(std::vector<std::shared_ptr<Entity>> entities) const;
     void clear() const;
     void renderPresent() const;
 private:

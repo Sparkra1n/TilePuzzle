@@ -36,7 +36,7 @@ void Player::update(const double deltaTime)
 
     // Calculate the potential new position based on the normalized direction and speed
     const Vector2<double> potentialPosition = m_sprite.getCoordinates() + direction * m_speed * deltaTime;
-
+    m_sprite.setRenderFlag();
     // Skip further checking if it is not a collision sprite
     if (m_sprite.getCollisionObserver() == nullptr)
         return;
@@ -71,4 +71,74 @@ void Player::handleEvent(const SDL_Event& event)
     default:
         break;
     }
+}
+
+void Player::setSpeed(const double speed)
+{
+    m_speed = speed;
+}
+
+void Player::setCoordinates(const Vector2<double> coordinates)
+{
+    m_sprite.setCoordinates(coordinates);
+}
+
+void Player::cacheTexture(SDL_Renderer* renderer)
+{
+    m_sprite.cacheTexture(renderer);
+}
+
+Sprite<PolygonCollision>* Player::getSprite()
+{
+    return &m_sprite;
+}
+
+SDL_Rect Player::getSDLRect() const
+{
+    return m_sprite.getSDLRect();
+}
+
+SDL_Surface* Player::getSDLSurface() const
+{
+    return m_sprite.getSDLSurface();
+}
+
+Vector2<double> Player::getCoordinates() const
+{
+    return m_sprite.getCoordinates();
+}
+
+double Player::getSpeed() const
+{
+    return m_speed;
+}
+
+bool Player::isSpecializedSprite() const
+{
+    return false;
+}
+
+bool Player::hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const
+{
+    return m_sprite.hasCollisionWith(other, potentialPosition);
+}
+
+SDL_Texture* Player::getCachedTexture() const
+{
+    return m_sprite.getCachedTexture();
+}
+
+bool Player::getRenderFlag() const
+{
+    return m_sprite.getRenderFlag();
+}
+
+void Player::clearRenderFlag()
+{
+	m_sprite.clearRenderFlag();
+}
+
+void Player::setRenderFlag()
+{
+    m_sprite.setRenderFlag();
 }
