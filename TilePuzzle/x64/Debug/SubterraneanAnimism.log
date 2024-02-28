@@ -1,0 +1,24 @@
+﻿  Player.cpp
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,28): warning C4244: 'initializing': conversion from 'double' to 'T', possible loss of data
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,28): warning C4244:         with
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,28): warning C4244:         [
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,28): warning C4244:             T=int
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,28): warning C4244:         ]
+  (compiling source file 'Player.cpp')
+  C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,28):
+  the template instantiation context (the oldest one first) is
+  	C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Player.h(42,18):
+  	see reference to class template instantiation 'Vector2<int>' being compiled
+  	C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,5):
+  	while compiling class template member function 'Vector2<int>::Vector2(void)'
+  		C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Player.h(42,39):
+  		see the first reference to 'Vector2<int>::Vector2' in 'Player::Player'
+  
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,36): warning C4244: 'initializing': conversion from 'double' to 'T', possible loss of data
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,36): warning C4244:         with
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,36): warning C4244:         [
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,36): warning C4244:             T=int
+C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\SubterraneanAnimism\Vector2.h(14,36): warning C4244:         ]
+  (compiling source file 'Player.cpp')
+  
+  SubterraneanAnimism.vcxproj -> C:\Users\spark\Documents\Visual Studio 2022\Projects\SubterraneanAnimism\x64\Debug\SubterraneanAnimism.exe

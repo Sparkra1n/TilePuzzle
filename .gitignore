@@ -2,18 +2,18 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/SubterraneanAnimism
-/SubterraneanAnimism/x64/Debug/Game.obj
-/SubterraneanAnimism/x64/Debug/main.obj
-/SubterraneanAnimism/x64/Debug/Sprite.obj
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/CL.command.1.tlog
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/Cl.items.tlog
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/CL.read.1.tlog
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/CL.write.1.tlog
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/link.command.1.tlog
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/link.read.1.tlog
-/SubterraneanAnimism/x64/Debug/Subterra.3f44b863.tlog/link.write.1.tlog
-/SubterraneanAnimism/x64/Debug/SubterraneanAnimism.ilk
-/SubterraneanAnimism/x64/Debug/SubterraneanAnimism.log
-/SubterraneanAnimism/x64/Debug/vc143.idb
-/SubterraneanAnimism/x64/Debug/vc143.pdb
+/.vs/TilePuzzle
+/TilePuzzle/x64/Debug/Game.obj
+/TilePuzzle/x64/Debug/main.obj
+/TilePuzzle/x64/Debug/Sprite.obj
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/CL.command.1.tlog
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/Cl.items.tlog
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/CL.read.1.tlog
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/CL.write.1.tlog
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/link.command.1.tlog
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/link.read.1.tlog
+/TilePuzzle/x64/Debug/Subterra.3f44b863.tlog/link.write.1.tlog
+/TilePuzzle/x64/Debug/TilePuzzle.ilk
+/TilePuzzle/x64/Debug/TilePuzzle.log
+/TilePuzzle/x64/Debug/vc143.idb
+/TilePuzzle/x64/Debug/vc143.pdb

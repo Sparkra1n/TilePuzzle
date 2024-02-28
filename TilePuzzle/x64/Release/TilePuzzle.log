@@ -1,0 +1,30 @@
+﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (SubterraneanAnimism.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  Game.cpp
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,28): warning C4244: 'initializing': conversion from 'double' to 'T', possible loss of data
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,28): warning C4244:         with
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,28): warning C4244:         [
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,28): warning C4244:             T=int
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,28): warning C4244:         ]
+  (compiling source file 'Game.cpp')
+  C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,28):
+  the template instantiation context (the oldest one first) is
+  	C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Tile.h(8,50):
+  	see reference to class template instantiation 'Vector2<int>' being compiled
+  	C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,5):
+  	while compiling class template member function 'Vector2<int>::Vector2(void)'
+  		C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Player.h(42,39):
+  		see the first reference to 'Vector2<int>::Vector2' in 'Player::Player'
+  
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,36): warning C4244: 'initializing': conversion from 'double' to 'T', possible loss of data
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,36): warning C4244:         with
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,36): warning C4244:         [
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,36): warning C4244:             T=int
+C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\TilePuzzle\Vector2.h(14,36): warning C4244:         ]
+  (compiling source file 'Game.cpp')
+  
+  Generating code
+  4 of 1273 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  TilePuzzle.vcxproj -> C:\Users\spark\Documents\Visual Studio 2022\Projects\TilePuzzle\x64\Release\TilePuzzle.exe
