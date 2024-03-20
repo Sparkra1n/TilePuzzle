@@ -69,7 +69,7 @@ void Player::update(const double deltaTime)
 
     // Calculate the potential new position based on the normalized direction and speed
     const Vector2<double> potentialPosition = m_sprite.getCoordinates() + direction * m_speed * deltaTime;
-    m_sprite.setRenderFlag();
+    //m_sprite.setRenderFlag();
     // Skip further checking if it is not a collision sprite
     if (m_sprite.getCollisionObserver() == nullptr)
         return;
@@ -166,17 +166,17 @@ SDL_Texture* Player::getCachedTexture() const
     return m_sprite.getCachedTexture();
 }
 
-bool Player::getRenderFlag() const
+void Player::setRenderFlag()
 {
-    return m_sprite.getRenderFlag();
+    m_sprite.setRenderFlag();
 }
 
 void Player::clearRenderFlag()
 {
-	m_sprite.clearRenderFlag();
+    m_sprite.clearRenderFlag();
 }
 
-void Player::setRenderFlag()
+bool Player::getRenderFlag() const
 {
-    m_sprite.setRenderFlag();
+    return m_sprite.getRenderFlag();
 }

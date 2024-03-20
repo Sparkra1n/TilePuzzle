@@ -164,6 +164,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="SDLExceptions.h" />
     <ClInclude Include="Sprite.h" />
+    <ClInclude Include="Sprites.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="Vector2.h" />
   </ItemGroup>

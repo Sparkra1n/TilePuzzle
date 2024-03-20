@@ -37,7 +37,7 @@ Game::Game()
 
     };
 
-    m_cursor = std::make_shared <Sprite<NoCollision>>(CURSOR_SPRITE_PATH);
+    m_cursor = std::make_shared<Sprite<NoCollision>>(CURSOR_SPRITE_PATH);
 
     // Load sprites
     m_player = std::make_shared<Player>(
@@ -46,28 +46,38 @@ Game::Game()
         5
     );
 
+    m_rectangle = std::make_shared<Sprite<RectangularCollision>>(
+        RECTANGLE_SPRITE_PATH,
+        this
+    );
+
     for (auto& row : m_tileMap) 
     {
-        for (auto& tile : row) 
+        for (auto& tile : row)
         {
-            tile = std::make_shared<Sprite<NoCollision>>(Tile::GRASS_SPRITE_PATH);
+            tile = std::make_shared<Sprite<NoCollision>>(GRASS_SPRITE_PATH);
             tile->setCoordinates({
                 static_cast<double>(&tile - row.data()) * Tile::TILE_DIMENSIONS.x,
                 static_cast<double>(&row - m_tileMap.data()) * Tile::TILE_DIMENSIONS.y
             });
-            tile->cacheTexture(m_renderer->getRenderer());
-            addEntity(tile);
+            addBackgroundEntity(tile);
         }
     }
-    addEntity(m_player);
-    addEntity(m_cursor);
+    m_rectangle->setCoordinates({ 100, 100 });
+    const SDL_Rect mouseRect = { 0, 0,10, 10 };
+    m_mouse = std::make_shared<Sprite<RectangularCollision>>(mouseRect, SDL_Color{ 255, 0, 0, 1 }, this);
+    
+    addForegroundEntity(m_mouse);
+    addForegroundEntity(m_rectangle);
+    addBackgroundEntity(m_player);
+    addBackgroundEntity(m_cursor);
 }
 
 void Game::draw()
 {
     //m_renderer->renderTiles(m_tileMap);
     // Render foreground entities
-    m_renderer->renderAll(m_entities);
+    m_renderer->renderAll(m_backgroundEntities, m_foregroundEntities);
     SDL_UpdateWindowSurface(m_window);
 }
 
@@ -89,11 +99,7 @@ void Game::run()
             case SDL_MOUSEBUTTONDOWN:
                 if (m_windowEvent.button.button == SDL_BUTTON_LEFT)
                 {
-                    //std::cout << "Left mouse button clicked at: "
-                    //    << m_windowEvent.button.x << ", "
-                    //    << m_windowEvent.button.y << std::endl;
-                    Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSDLRect());
-                   /* std::cout << "Will walk " << destination - Vector2(m_player->getSDLRect().x, m_player->getSDLRect().y) << " to " << destination << "\n";*/
+                    const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSDLRect());
                     m_player->walkTo(destination);
                 }
                 else if (m_windowEvent.button.button == SDL_BUTTON_RIGHT)
@@ -116,25 +122,63 @@ void Game::run()
 
 void Game::update(const double deltaTime) const
 {
-    for (const auto& entity : m_entities)
+    for (const auto& entity : m_backgroundEntities)
         entity->update(deltaTime);
+
+    // Highlight sprite that is hovered over
+    // If the mouse is hovering over a stone, highlight the stone and not the tile underneath.
+    bool isHoveringOverTile = true;
 
     Vector2<int> mousePosition;
     SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-    //std::cout << mousePosition << "\r";
-    mousePosition = enclosingTile(mousePosition);
-    m_cursor->setCoordinates(mousePosition);
+    m_mouse->setCoordinates(mousePosition);
+
+    for (const auto& other : m_foregroundEntities)
+    {
+        if (other.get() == m_mouse.get())
+            continue;
+
+        const SDL_Rect mouseRect = m_mouse->getSDLRect();
+        const SDL_Rect otherRect = other->getSDLRect();
+        if (SDL_HasIntersection(&mouseRect, &otherRect) == SDL_TRUE)
+        {
+            isHoveringOverTile = false;
+            std::cout << "Sprite Address: " << other << "\n";
+        }
+    }
+
+    if (isHoveringOverTile)
+    {
+        mousePosition = enclosingTile(mousePosition);
+        m_cursor->setCoordinates(mousePosition);
+        m_cursor->setRenderFlag();
+    }
+    else
+    {
+        m_cursor->clearRenderFlag();
+    }
+    //mousePosition = enclosingTile(mousePosition);
+    //m_cursor->setCoordinates(mousePosition);
+
+    // Highlight other scene tiles on hover
+
 }
 
-void Game::addEntity(const std::shared_ptr<Entity>& entity)
+void Game::addBackgroundEntity(const std::shared_ptr<Entity>& entity)
 {
     entity->cacheTexture(m_renderer->getRenderer());
-    m_entities.push_back(entity);
+    m_backgroundEntities.push_back(entity);
+}
+
+void Game::addForegroundEntity(const std::shared_ptr<Entity>& entity)
+{
+    entity->cacheTexture(m_renderer->getRenderer());
+    m_foregroundEntities.push_back(entity);
 }
 
 bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPosition) const
 {
-    for (const auto& other : m_entities)
+    for (const auto& other : m_backgroundEntities)
     {
         if (other.get() == &entity)
         {

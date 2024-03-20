@@ -25,7 +25,7 @@ void Projectile::setDamage(const int damage)
 	m_damage = damage;
 }
 
-void Projectile::setVelocity(Vector2<double> velocity)
+void Projectile::setVelocity(const Vector2<double> velocity)
 {
 	m_velocity = velocity;
 }
