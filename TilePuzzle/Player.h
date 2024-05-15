@@ -10,6 +10,7 @@ public:
     Player(const char* path, const Observer* observer = nullptr, const double speed = 1.0)
         : m_sprite(path, observer), m_speed(speed) {}
     ~Player() override = default;
+
     void walkTo(Vector2<int> coordinates);
     void handleEvent(const SDL_Event& event);
     void update(double deltaTime) override;
@@ -18,25 +19,38 @@ public:
     void cacheTexture(SDL_Renderer* renderer) override;
     void clearRenderFlag() override;
     void setRenderFlag() override;
+    void clearCacheFlag() override;
+    void setCacheFlag() override;
+    //void setRgbaOffset(SDL_Color color, bool subtractive = false) override;
+    void setRgbaOffset_(SDL_Color offset) override;
+    //void clearRgbaOffsetFlag() override;
+    //void setRgbaOffsetFlag() override;
+    void resetSurface() override;
 
     //TODO: refactor player functions such as this one
+    //[[nodiscard]] std::pair<SDL_Color, bool> getRgbaOffset() const override;
+
     [[nodiscard]] Sprite<PolygonCollision>* getSprite();
 
-    [[nodiscard]] SDL_Rect getSDLRect() const override;
+    [[nodiscard]] SDL_Rect getSdlRect() const override;
 
-    [[nodiscard]] SDL_Surface* getSDLSurface() const;
+    [[nodiscard]] SDL_Surface* getSdlSurface() const;
 
     [[nodiscard]] Vector2<double> getCoordinates() const;
 
     [[nodiscard]] double getSpeed() const;
 
-    [[nodiscard]] bool isSpecializedSprite() const override;
+    [[nodiscard]] bool isDummy() const override;
 
     [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
 
     [[nodiscard]] SDL_Texture* getCachedTexture() const override;
 
     [[nodiscard]] bool getRenderFlag() const override;
+
+    bool getCacheFlag() const override;
+
+    //bool getRgbaOffsetFlag() const override;
 
 private:
     Vector2<int> m_clickTargetPosition{};

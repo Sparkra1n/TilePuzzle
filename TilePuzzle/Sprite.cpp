@@ -1,4 +1,14 @@
+/**
+ * @file Sprite.h
+ * @brief SDL Sprite classes
+ * @author Ani
+ * @version 0.1
+ * @date 2023-11-26
+ */
+
 #include "Sprite.h"
+#include <iostream>
+#include <iomanip>
 
 void Entity::update(double deltaTime)
 {
@@ -6,41 +16,51 @@ void Entity::update(double deltaTime)
 }
 
 // Whether object is a plain Entity
-bool Entity::isSpecializedSprite() const
+bool Entity::isDummy() const
 {
     return false;
 }
 
 SpriteBase::SpriteBase(const char* path, const Observer* observer)
-    : m_renderFlag(true), m_texture(nullptr)
+    : m_renderFlag(true)
 {
+    m_surfaceOriginal = loadSurface(path);
     m_surface = loadSurface(path);
     m_rect.w = m_surface->w;
     m_rect.h = m_surface->h;
 }
 
 SpriteBase::SpriteBase(const SDL_Rect rect, const SDL_Color color)
-        : m_renderFlag(true), m_rect(rect), m_coordinates(rect.x, rect.y), m_texture(nullptr)
+        : m_renderFlag(true),
+          m_rect(rect),
+          m_coordinates(rect.x, rect.y)
 {
     SDL_Surface* surface = SDL_CreateRGBSurface(0, rect.w, rect.h, 32, 0, 0, 0, 0);
     if (!surface)
         throw SDLImageLoadException(SDL_GetError());
 
     SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, color.r, color.g, color.b, color.a));
-    m_surface = surface;
+    m_surfaceOriginal = surface;
+    m_surface = SDL_DuplicateSurface(surface);
 }
 
 SpriteBase::SpriteBase(const SpriteBase& other)
-    : m_renderFlag(other.m_renderFlag), m_rect(other.m_rect), m_coordinates(other.m_coordinates), m_texture(nullptr)
+    : m_renderFlag(other.m_renderFlag),
+      m_cacheFlag(other.m_cacheFlag),
+      m_rgbaOffset(other.m_rgbaOffset),
+      m_rect(other.m_rect),
+      m_coordinates(other.m_coordinates)
 {
+    m_surfaceOriginal = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
     m_surface = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
-    if (!m_surface)
+    if (!m_surfaceOriginal || !m_surface)
         throw SDLImageLoadException(SDL_GetError());
 }
 
 SpriteBase::~SpriteBase()
 {
     SDL_FreeSurface(m_surface);
+    SDL_FreeSurface(const_cast<SDL_Surface*>(m_surfaceOriginal)); // Cast away const for freeing
 }
 
 void SpriteBase::setCoordinates(const Vector2<double> coordinates)
@@ -62,11 +82,11 @@ void SpriteBase::setYCoordinate(const double value)
     m_rect.y = static_cast<int>(value);
 }
 
-
 void SpriteBase::cacheTexture(SDL_Renderer* renderer)
 {
     if (m_texture != nullptr)
         SDL_DestroyTexture(m_texture);
+
     m_texture = SDL_CreateTextureFromSurface(renderer, m_surface);
 }
 
@@ -82,7 +102,7 @@ uint8_t SpriteBase::getPixelAlpha(const int x, const int y) const
     return 0;
 }
 
-SDL_Rect SpriteBase::getSDLRect() const
+SDL_Rect SpriteBase::getSdlRect() const
 {
     return m_rect;
 }
@@ -107,7 +127,7 @@ bool SpriteBase::isCollisionSprite() const
     return false;
 }
 
-bool SpriteBase::isSpecializedSprite() const
+bool SpriteBase::isDummy() const
 {
     return true;
 }
@@ -117,7 +137,7 @@ Vector2<double> SpriteBase::getCoordinates() const
     return m_coordinates;
 }
 
-SDL_Surface* SpriteBase::getSDLSurface() const
+SDL_Surface* SpriteBase::getSdlSurface() const
 {
     return m_surface;
 }
@@ -135,19 +155,51 @@ SDL_Surface* SpriteBase::loadSurface(const char* path)
     return surface;
 }
 
-void SpriteBase::setRenderFlag()
+void SpriteBase::resetSurface()
 {
-    m_renderFlag = true;
+    SDL_FreeSurface(m_surface);
+    m_surface = SDL_DuplicateSurface(const_cast<SDL_Surface*>(m_surfaceOriginal));
+    setCacheFlag();
 }
 
-void SpriteBase::clearRenderFlag()
+void SpriteBase::setRgbaOffset_(const SDL_Color offset)
 {
-    m_renderFlag = false;
-}
+    //const auto [offset, subtractive] = m_rgbaOffset;
+    const Color deltaColor = Color(offset) - m_rgbaOffset;
 
-bool SpriteBase::getRenderFlag() const
-{
-    return m_renderFlag;
+    // Lock surface to access pixel data
+    if (SDL_LockSurface(m_surface) != 0)
+        return;
+    
+    auto* pixels = static_cast<uint32_t*>(m_surface->pixels); // Access pixel data
+
+    const int width = m_surface->w;
+    const int height = m_surface->h;
+
+    // Manipulate each pixel
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const uint32_t pixel = pixels[y * width + x];
+            uint8_t r, g, b, a;
+            SDL_GetRGBA(pixel, m_surface->format, &r, &g, &b, &a);
+
+            // Apply offset and colorClamp operation to each color component
+            r = Color::colorClamp(r + deltaColor.r);
+            g = Color::colorClamp(g + deltaColor.g);
+            b = Color::colorClamp(b + deltaColor.b);
+            a = Color::colorClamp(a + deltaColor.a);
+
+            // Update pixel
+            pixels[y * width + x] = SDL_MapRGBA(m_surface->format, r, g, b, a);
+        }
+    }
+
+    // Unlock surface
+    SDL_UnlockSurface(m_surface);
+    m_rgbaOffset = Color(offset);
+    setCacheFlag();
 }
 
 // Sprite<NoCollision>
@@ -187,7 +239,7 @@ bool Sprite<RectangularCollision>::hasCollisionWithImpl(const Sprite<Rectangular
     SDL_Rect selfRect = m_rect;
     selfRect.x = static_cast<int>(potentialPosition.x);
     selfRect.y = static_cast<int>(potentialPosition.y);
-    const SDL_Rect otherRect = other.getSDLRect();
+    const SDL_Rect otherRect = other.getSdlRect();
     return SDL_HasIntersection(&selfRect, &otherRect) == SDL_TRUE;
 }
 
@@ -295,7 +347,7 @@ bool Sprite<PolygonCollision>::hasCollisionWithImpl(const Sprite<PolygonCollisio
 {
     // Check if the bounding boxes of the two sprites intersect
     const SDL_Rect selfRect = m_rect;
-    SDL_Rect otherRect = other.getSDLRect();
+    SDL_Rect otherRect = other.getSdlRect();
     otherRect.x = static_cast<int>(potentialPosition.x);
     otherRect.y = static_cast<int>(potentialPosition.y);
     if (SDL_HasIntersection(&selfRect, &otherRect) == SDL_FALSE)
@@ -312,8 +364,8 @@ bool Sprite<PolygonCollision>::hasCollisionWithImpl(const Sprite<PolygonCollisio
         {
             // Adjust the position of otherSlice based on potentialPosition
             SDL_Rect adjustedOtherSlice = otherSlice;
-            adjustedOtherSlice.x += static_cast<int>(potentialPosition.x - other.getSDLRect().x);
-            adjustedOtherSlice.y += static_cast<int>(potentialPosition.y - other.getSDLRect().y);
+            adjustedOtherSlice.x += static_cast<int>(potentialPosition.x - other.getSdlRect().x);
+            adjustedOtherSlice.y += static_cast<int>(potentialPosition.y - other.getSdlRect().y);
 
             // Check for intersection between slices
             if (SDL_HasIntersection(&rect1, &adjustedOtherSlice) == SDL_TRUE)

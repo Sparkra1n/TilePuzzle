@@ -12,7 +12,7 @@ Game::Game()
 
     // Create window
     m_window = SDL_CreateWindow(
-        "Subterranean Animism",
+        "Tile Puzzle",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         Tile::WINDOW_DIMENSIONS.x,
@@ -37,13 +37,11 @@ Game::Game()
 
     };
 
-    m_cursor = std::make_shared<Sprite<NoCollision>>(CURSOR_SPRITE_PATH);
-
     // Load sprites
     m_player = std::make_shared<Player>(
         PLAYER_SPRITE_PATH,
         this,
-        5
+        10
     );
 
     m_rectangle = std::make_shared<Sprite<RectangularCollision>>(
@@ -64,18 +62,17 @@ Game::Game()
         }
     }
     m_rectangle->setCoordinates({ 100, 100 });
-    const SDL_Rect mouseRect = { 0, 0,10, 10 };
-    m_mouse = std::make_shared<Sprite<RectangularCollision>>(mouseRect, SDL_Color{ 255, 0, 0, 1 }, this);
-    
+    constexpr SDL_Rect mouseRect = { 0, 0, 5, 5 };
+    m_mouse = std::make_shared<Sprite<RectangularCollision>>(mouseRect, SDL_Color{}, this);
+    m_mouse->clearRenderFlag();
+
     addForegroundEntity(m_mouse);
     addForegroundEntity(m_rectangle);
     addBackgroundEntity(m_player);
-    addBackgroundEntity(m_cursor);
 }
 
 void Game::draw()
 {
-    //m_renderer->renderTiles(m_tileMap);
     // Render foreground entities
     m_renderer->renderAll(m_backgroundEntities, m_foregroundEntities);
     SDL_UpdateWindowSurface(m_window);
@@ -83,7 +80,7 @@ void Game::draw()
 
 void Game::run()
 {
-    FPSCounter fpsCounter(60);
+    Counter counter(60);
     bool alive = true;
     while (alive)
     {
@@ -99,22 +96,23 @@ void Game::run()
             case SDL_MOUSEBUTTONDOWN:
                 if (m_windowEvent.button.button == SDL_BUTTON_LEFT)
                 {
-                    const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSDLRect());
+                    const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSdlRect());
                     m_player->walkTo(destination);
                 }
                 else if (m_windowEvent.button.button == SDL_BUTTON_RIGHT)
                 {
                     std::cout << "Right mouse button clicked at: "
                         << m_windowEvent.button.x << ", "
-                        << m_windowEvent.button.y << std::endl;
+                        << m_windowEvent.button.y << "\n";
                 }
                 break;
             default:
                 break;
             }
         }
-        fpsCounter.update();
-        const double deltaTime = fpsCounter.getDeltaTime();
+        counter.update();
+        const double deltaTime = counter.getDeltaTime();
+        std::cout << "FPS: " << counter.getFPS() << "\r";
         update(deltaTime);
         draw();
     }
@@ -125,43 +123,53 @@ void Game::update(const double deltaTime) const
     for (const auto& entity : m_backgroundEntities)
         entity->update(deltaTime);
 
-    // Highlight sprite that is hovered over
-    // If the mouse is hovering over a stone, highlight the stone and not the tile underneath.
-    bool isHoveringOverTile = true;
-
     Vector2<int> mousePosition;
     SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
     m_mouse->setCoordinates(mousePosition);
+    bool mouseHoveredOverForegroundEntity = false;
 
     for (const auto& other : m_foregroundEntities)
     {
-        if (other.get() == m_mouse.get())
+        if (other == m_mouse)
             continue;
 
-        const SDL_Rect mouseRect = m_mouse->getSDLRect();
-        const SDL_Rect otherRect = other->getSDLRect();
+        const SDL_Rect mouseRect = m_mouse->getSdlRect();
+        const SDL_Rect otherRect = other->getSdlRect();
+
         if (SDL_HasIntersection(&mouseRect, &otherRect) == SDL_TRUE)
         {
-            isHoveringOverTile = false;
-            std::cout << "Sprite Address: " << other << "\n";
+            mouseHoveredOverForegroundEntity = true;
+            other->setRgbaOffset_({ 30, 30, 30, 0 });
+        }
+        else
+        {
+            other->setRgbaOffset_({});
         }
     }
 
-    if (isHoveringOverTile)
+    // Get the tile coordinates based on mouse position
+    const Vector2<int> tileCoords = enclosingTile(mousePosition);
+    const int x = tileCoords.x / Tile::TILE_DIMENSIONS.x;
+    const int y = tileCoords.y / Tile::TILE_DIMENSIONS.y;
+    const std::shared_ptr<Entity> tile = m_tileMap[y][x];
+
+    static std::shared_ptr<Entity> prevTile = nullptr;
+
+    if (!mouseHoveredOverForegroundEntity)
     {
-        mousePosition = enclosingTile(mousePosition);
-        m_cursor->setCoordinates(mousePosition);
-        m_cursor->setRenderFlag();
+        if (tile != prevTile)
+        {
+            tile->setRgbaOffset_({ 30, 30, 30, 0 });
+            if (prevTile)
+                prevTile->setRgbaOffset_({});
+            prevTile = tile;
+        }
     }
     else
     {
-        m_cursor->clearRenderFlag();
+        if (prevTile)
+            prevTile->setRgbaOffset_({});
     }
-    //mousePosition = enclosingTile(mousePosition);
-    //m_cursor->setCoordinates(mousePosition);
-
-    // Highlight other scene tiles on hover
-
 }
 
 void Game::addBackgroundEntity(const std::shared_ptr<Entity>& entity)
@@ -185,9 +193,9 @@ bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPositi
             continue;
         }
 
-        if (potentialPosition.x + entity.getSDLRect().w > Tile::WINDOW_DIMENSIONS.x 
+        if (potentialPosition.x + entity.getSdlRect().w > Tile::WINDOW_DIMENSIONS.x 
             || potentialPosition.x < 0
-            || potentialPosition.y + entity.getSDLRect().h > Tile::WINDOW_DIMENSIONS.y
+            || potentialPosition.y + entity.getSdlRect().h > Tile::WINDOW_DIMENSIONS.y
             || potentialPosition.y < 0)
         {
             return false;

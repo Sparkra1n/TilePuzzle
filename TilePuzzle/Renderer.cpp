@@ -29,7 +29,19 @@ void Renderer::render(const std::vector<std::shared_ptr<Entity>>& entities) cons
         if (!entity->getRenderFlag())
             continue;
 
-        SDL_Rect entityRect = entity->getSDLRect();
+        if (entity->getCacheFlag())
+        {
+            entity->cacheTexture(m_renderer.get());
+            entity->clearCacheFlag();
+        }
+
+        //if (entity->getRgbaOffsetFlag())
+        //{
+        //    entity->setRgbaOffset_();
+        //    entity->clearRgbaOffsetFlag();
+        //    entity->cacheTexture(m_renderer.get());
+        //}
+        SDL_Rect entityRect = entity->getSdlRect();
         SDL_RenderCopy(m_renderer.get(), entity->getCachedTexture(), nullptr, &entityRect);
     }
 }

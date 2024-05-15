@@ -49,8 +49,8 @@ SDL_Texture* Projectile::getCachedTexture() const
 {
 	return m_sprite.getCachedTexture();
 }
-SDL_Rect Projectile::getSDLRect() const
+SDL_Rect Projectile::getSdlRect() const
 {
-	return m_sprite.getSDLRect();
+	return m_sprite.getSdlRect();
 }
 

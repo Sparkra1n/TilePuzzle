@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <vector>
 #include "Sprite.h"

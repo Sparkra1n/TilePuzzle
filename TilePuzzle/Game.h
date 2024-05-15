@@ -7,7 +7,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include "SDLExceptions.h"
-#include "FPSCounter.h"
+#include "Counter.h"
 #include "Sprite.h"
 #include "Sprites.h"
 #include "Tile.h"

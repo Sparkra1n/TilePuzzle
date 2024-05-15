@@ -131,14 +131,14 @@ Sprite<PolygonCollision>* Player::getSprite()
     return &m_sprite;
 }
 
-SDL_Rect Player::getSDLRect() const
+SDL_Rect Player::getSdlRect() const
 {
-    return m_sprite.getSDLRect();
+    return m_sprite.getSdlRect();
 }
 
-SDL_Surface* Player::getSDLSurface() const
+SDL_Surface* Player::getSdlSurface() const
 {
-    return m_sprite.getSDLSurface();
+    return m_sprite.getSdlSurface();
 }
 
 Vector2<double> Player::getCoordinates() const
@@ -151,7 +151,7 @@ double Player::getSpeed() const
     return m_speed;
 }
 
-bool Player::isSpecializedSprite() const
+bool Player::isDummy() const
 {
     return false;
 }
@@ -179,4 +179,29 @@ void Player::clearRenderFlag()
 bool Player::getRenderFlag() const
 {
     return m_sprite.getRenderFlag();
+}
+
+void Player::clearCacheFlag()
+{
+    m_sprite.clearCacheFlag();
+}
+
+void Player::setCacheFlag()
+{
+    m_sprite.setCacheFlag();
+}
+
+void Player::setRgbaOffset_(const SDL_Color offset)
+{
+    m_sprite.setRgbaOffset_(offset);
+}
+
+bool Player::getCacheFlag() const
+{
+    return m_sprite.getCacheFlag();
+}
+
+void Player::resetSurface()
+{
+    m_sprite.resetSurface();
 }

@@ -21,7 +21,7 @@ public:
     [[nodiscard]] Vector2<double> getVelocity() const;
     [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
     [[nodiscard]] SDL_Texture* getCachedTexture() const override;
-    [[nodiscard]] SDL_Rect getSDLRect() const override;
+    [[nodiscard]] SDL_Rect getSdlRect() const override;
 
 protected:
     Sprite<RectangularCollision> m_sprite;

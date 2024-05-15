@@ -156,7 +156,7 @@
     <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="FPSCounter.h" />
+    <ClInclude Include="Counter.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Observer.h" />
     <ClInclude Include="Player.h" />
