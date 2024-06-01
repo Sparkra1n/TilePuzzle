@@ -4,34 +4,34 @@
 void Player::update(const double deltaTime)
 {
     // Handle Click controls
-    if (m_clickTargetPosition.x != -1)
+    if (m_targetPosition.x != -1)
     {
-        if (std::abs(m_clickTargetPosition.x - m_sprite.getCoordinates().x) > 1)
+        if (std::abs(m_targetPosition.x - getCoordinates().x) > 1)
         {
-            Vector2 coordinates = m_sprite.getCoordinates();
-            const int sign = coordinates.x < m_clickTargetPosition.x ? 1 : -1;
+            Vector2<double> coordinates = getCoordinates();
+            const int sign = coordinates.x < m_targetPosition.x ? 1 : -1;
             coordinates.x += m_speed * deltaTime * sign;
-            m_sprite.setCoordinates(coordinates);
+            setCoordinates(coordinates);
         }
         else
         {
-            m_sprite.setXCoordinate(m_clickTargetPosition.x);
-            m_clickTargetPosition.x = -1;
+            setXCoordinate(m_targetPosition.x);
+            m_targetPosition.x = -1;
         }
     }
-    if (m_clickTargetPosition.y != -1 && m_clickTargetPosition.x == -1)
+    if (m_targetPosition.y != -1 && m_targetPosition.x == -1)
     {
-        if (std::abs(m_clickTargetPosition.y - m_sprite.getCoordinates().y) > 1)
+        if (std::abs(m_targetPosition.y - getCoordinates().y) > 1)
         {
-            Vector2 coordinates = m_sprite.getCoordinates();
-            const int sign = coordinates.y < m_clickTargetPosition.y ? 1 : -1;
+            Vector2<double> coordinates = getCoordinates();
+            const int sign = coordinates.y < m_targetPosition.y ? 1 : -1;
             coordinates.y += m_speed * deltaTime * sign;
-            m_sprite.setCoordinates(coordinates);
+            setCoordinates(coordinates);
         }
         else
         {
-            m_sprite.setYCoordinate(m_clickTargetPosition.y);
-            m_clickTargetPosition.y = -1;
+            setYCoordinate(m_targetPosition.y);
+            m_targetPosition.y = -1;
         }
     }
 
@@ -68,16 +68,16 @@ void Player::update(const double deltaTime)
         return;
 
     // Calculate the potential new position based on the normalized direction and speed
-    const Vector2<double> potentialPosition = m_sprite.getCoordinates() + direction * m_speed * deltaTime;
-    //m_sprite.setRenderFlag();
+    const Vector2<double> potentialPosition = getCoordinates() + direction * m_speed * deltaTime;
+
     // Skip further checking if it is not a collision sprite
-    if (m_sprite.getCollisionObserver() == nullptr)
+    if (getCollisionObserver() == nullptr)
         return;
 
-    if (m_sprite.getCollisionObserver()->canMoveTo(m_sprite, potentialPosition))
+    if (getCollisionObserver()->canMoveTo(*this, potentialPosition))
     {
         // Update exact position
-        m_sprite.setCoordinates(potentialPosition);
+        setCoordinates(potentialPosition);
 
         // Update screen position
         //m_sprite.setDimensions(static_cast<int>(potentialPosition.x), static_cast<int>(potentialPosition.y));
@@ -86,7 +86,7 @@ void Player::update(const double deltaTime)
     // Collisions will result in the object sliding along the surface if the player comes an angle != 90 degrees
     else
     {
-	    //Vector2 resultantDirection = 
+        //Vector2 resultantDirection = 
     }
 }
 
@@ -104,104 +104,4 @@ void Player::handleEvent(const SDL_Event& event)
     default:
         break;
     }
-}
-
-void Player::walkTo(Vector2<int> coordinates)
-{
-    m_clickTargetPosition = coordinates;
-}
-
-void Player::setSpeed(const double speed)
-{
-    m_speed = speed;
-}
-
-void Player::setCoordinates(const Vector2<double> coordinates)
-{
-    m_sprite.setCoordinates(coordinates);
-}
-
-void Player::cacheTexture(SDL_Renderer* renderer)
-{
-    m_sprite.cacheTexture(renderer);
-}
-
-Sprite<PolygonCollision>* Player::getSprite()
-{
-    return &m_sprite;
-}
-
-SDL_Rect Player::getSdlRect() const
-{
-    return m_sprite.getSdlRect();
-}
-
-SDL_Surface* Player::getSdlSurface() const
-{
-    return m_sprite.getSdlSurface();
-}
-
-Vector2<double> Player::getCoordinates() const
-{
-    return m_sprite.getCoordinates();
-}
-
-double Player::getSpeed() const
-{
-    return m_speed;
-}
-
-bool Player::isDummy() const
-{
-    return false;
-}
-
-bool Player::hasCollisionWith(const Entity& other, const Vector2<double> potentialPosition) const
-{
-    return m_sprite.hasCollisionWith(other, potentialPosition);
-}
-
-SDL_Texture* Player::getCachedTexture() const
-{
-    return m_sprite.getCachedTexture();
-}
-
-void Player::setRenderFlag()
-{
-    m_sprite.setRenderFlag();
-}
-
-void Player::clearRenderFlag()
-{
-    m_sprite.clearRenderFlag();
-}
-
-bool Player::getRenderFlag() const
-{
-    return m_sprite.getRenderFlag();
-}
-
-void Player::clearCacheFlag()
-{
-    m_sprite.clearCacheFlag();
-}
-
-void Player::setCacheFlag()
-{
-    m_sprite.setCacheFlag();
-}
-
-void Player::setRgbaOffset_(const SDL_Color offset)
-{
-    m_sprite.setRgbaOffset_(offset);
-}
-
-bool Player::getCacheFlag() const
-{
-    return m_sprite.getCacheFlag();
-}
-
-void Player::resetSurface()
-{
-    m_sprite.resetSurface();
 }

@@ -3,7 +3,6 @@
 #include <SDL.h>
 #include <future>
 #include <memory>
-#include <mutex>
 #include <thread>
 #include <vector>
 #include "Sprite.h"
@@ -20,7 +19,7 @@ public:
     Renderer(SDL_Window* window, int rendererIndex, uint32_t rendererFlags);
     ~Renderer();
 
-	SDL_Renderer* getRenderer() const;
+    SDL_Renderer* getRenderer() const;
 
     template<typename... Args>
     void renderAll(std::vector<std::shared_ptr<Entity>>& first, Args&&... args) const
@@ -30,7 +29,7 @@ public:
         renderAll(std::forward<Args>(args)...);
     }
 
-	void renderAll() const
+    void renderAll() const
     {
         SDL_RenderPresent(m_renderer.get());
     }

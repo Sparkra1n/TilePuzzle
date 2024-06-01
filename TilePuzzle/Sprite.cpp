@@ -21,8 +21,8 @@ bool Entity::isDummy() const
     return false;
 }
 
-SpriteBase::SpriteBase(const char* path, const Observer* observer)
-    : m_renderFlag(true)
+Sprite::Sprite(const char* path, const Observer* observer)
+    : m_renderFlag(true), m_observer(observer)
 {
     m_surfaceOriginal = loadSurface(path);
     m_surface = loadSurface(path);
@@ -30,10 +30,11 @@ SpriteBase::SpriteBase(const char* path, const Observer* observer)
     m_rect.h = m_surface->h;
 }
 
-SpriteBase::SpriteBase(const SDL_Rect rect, const SDL_Color color)
+Sprite::Sprite(const SDL_Rect rect, const SDL_Color color, const Observer* observer)
         : m_renderFlag(true),
           m_rect(rect),
-          m_coordinates(rect.x, rect.y)
+          m_coordinates(rect.x, rect.y),
+          m_observer(observer)
 {
     SDL_Surface* surface = SDL_CreateRGBSurface(0, rect.w, rect.h, 32, 0, 0, 0, 0);
     if (!surface)
@@ -44,12 +45,13 @@ SpriteBase::SpriteBase(const SDL_Rect rect, const SDL_Color color)
     m_surface = SDL_DuplicateSurface(surface);
 }
 
-SpriteBase::SpriteBase(const SpriteBase& other)
+Sprite::Sprite(const Sprite& other)
     : m_renderFlag(other.m_renderFlag),
       m_cacheFlag(other.m_cacheFlag),
       m_rgbaOffset(other.m_rgbaOffset),
       m_rect(other.m_rect),
-      m_coordinates(other.m_coordinates)
+      m_coordinates(other.m_coordinates),
+      m_observer(other.m_observer)
 {
     m_surfaceOriginal = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
     m_surface = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
@@ -57,32 +59,32 @@ SpriteBase::SpriteBase(const SpriteBase& other)
         throw SDLImageLoadException(SDL_GetError());
 }
 
-SpriteBase::~SpriteBase()
+Sprite::~Sprite()
 {
     SDL_FreeSurface(m_surface);
     SDL_FreeSurface(const_cast<SDL_Surface*>(m_surfaceOriginal)); // Cast away const for freeing
 }
 
-void SpriteBase::setCoordinates(const Vector2<double> coordinates)
+void Sprite::setCoordinates(const Vector2<double> coordinates)
 {
     m_coordinates = coordinates;
     m_rect.x = static_cast<int>(coordinates.x);
     m_rect.y = static_cast<int>(coordinates.y);
 }
 
-void SpriteBase::setXCoordinate(const double value)
+void Sprite::setXCoordinate(const double value)
 {
     m_coordinates.x = value;
     m_rect.x = static_cast<int>(value);
 }
 
-void SpriteBase::setYCoordinate(const double value)
+void Sprite::setYCoordinate(const double value)
 {
     m_coordinates.y = value;
     m_rect.y = static_cast<int>(value);
 }
 
-void SpriteBase::cacheTexture(SDL_Renderer* renderer)
+void Sprite::cacheTexture(SDL_Renderer* renderer)
 {
     if (m_texture != nullptr)
         SDL_DestroyTexture(m_texture);
@@ -90,7 +92,7 @@ void SpriteBase::cacheTexture(SDL_Renderer* renderer)
     m_texture = SDL_CreateTextureFromSurface(renderer, m_surface);
 }
 
-uint8_t SpriteBase::getPixelAlpha(const int x, const int y) const
+uint8_t Sprite::getPixelAlpha(const int x, const int y) const
 {
     if (x >= 0 && x < m_surface->w && y >= 0 && y < m_surface->h)
     {
@@ -102,12 +104,12 @@ uint8_t SpriteBase::getPixelAlpha(const int x, const int y) const
     return 0;
 }
 
-SDL_Rect SpriteBase::getSdlRect() const
+SDL_Rect Sprite::getSdlRect() const
 {
     return m_rect;
 }
 
-SDL_Color SpriteBase::generateRandomColor()
+SDL_Color Sprite::generateRandomColor()
 {
     static bool isSeeded = false;
     if (!isSeeded)
@@ -122,32 +124,27 @@ SDL_Color SpriteBase::generateRandomColor()
     return { r, g, b, 255 };
 }
 
-bool SpriteBase::isCollisionSprite() const
+bool Sprite::isCollisionSprite() const
 {
     return false;
 }
 
-bool SpriteBase::isDummy() const
+bool Sprite::isDummy() const
 {
     return true;
 }
 
-Vector2<double> SpriteBase::getCoordinates() const
-{
-    return m_coordinates;
-}
-
-SDL_Surface* SpriteBase::getSdlSurface() const
+SDL_Surface* Sprite::getSdlSurface() const
 {
     return m_surface;
 }
 
-SDL_Texture* SpriteBase::getCachedTexture() const
+SDL_Texture* Sprite::getCachedTexture() const
 {
     return m_texture;
 }
 
-SDL_Surface* SpriteBase::loadSurface(const char* path)
+SDL_Surface* Sprite::loadSurface(const char* path)
 {
     SDL_Surface* surface = SDL_LoadBMP(path);
     if (!surface)
@@ -155,16 +152,15 @@ SDL_Surface* SpriteBase::loadSurface(const char* path)
     return surface;
 }
 
-void SpriteBase::resetSurface()
+void Sprite::resetSurface()
 {
     SDL_FreeSurface(m_surface);
     m_surface = SDL_DuplicateSurface(const_cast<SDL_Surface*>(m_surfaceOriginal));
     setCacheFlag();
 }
 
-void SpriteBase::setRgbaOffset_(const SDL_Color offset)
+void Sprite::setRgbaOffset(const SDL_Color offset)
 {
-    //const auto [offset, subtractive] = m_rgbaOffset;
     const Color deltaColor = Color(offset) - m_rgbaOffset;
 
     // Lock surface to access pixel data
@@ -202,69 +198,62 @@ void SpriteBase::setRgbaOffset_(const SDL_Color offset)
     setCacheFlag();
 }
 
-// Sprite<NoCollision>
-
-Sprite<NoCollision>::Sprite(const char* path)
-    : SpriteBase(path) {}
-
-Sprite<NoCollision>::Sprite(const SDL_Rect rect, const SDL_Color color)
-    : SpriteBase(rect, color) {}
-
-// Sprite<RectangularCollision>
-
-Sprite<RectangularCollision>::Sprite(const char* path, const Observer* observer)
-    : SpriteBase(path), m_observer(observer) {}
-
-Sprite<RectangularCollision>::Sprite(const SDL_Rect rect, const SDL_Color color, const Observer* observer)
-    : SpriteBase(rect, color), m_observer(observer) {}
-
-const Observer* Sprite<RectangularCollision>::getCollisionObserver() const
+bool Sprite::hasCollisionWith(const Entity& other, 
+    const Vector2<double> potentialPosition, 
+    const CollisionDetectionMethod collisionDetectionMethod) const
 {
-    return m_observer;
+    switch (collisionDetectionMethod)
+    {
+    case CollisionDetectionMethod::NoCollision:
+        return false;
+
+    case CollisionDetectionMethod::RectangularCollision:
+    {
+        SDL_Rect selfRect = m_rect;
+        selfRect.x = static_cast<int>(potentialPosition.x);
+        selfRect.y = static_cast<int>(potentialPosition.y);
+        SDL_Rect otherRect = other.getSdlRect();
+        return SDL_HasIntersection(&selfRect, &otherRect) == SDL_TRUE;
+    }
+
+    case CollisionDetectionMethod::PolygonCollision:
+    {
+        // TODO: Caching and acquiring slices
+
+        // If the SDL_Rects don't intersect, there's no need for further collision checking
+        if (!hasCollisionWith(other, potentialPosition, CollisionDetectionMethod::RectangularCollision))
+            return false;
+
+        //printf("moving on\n");
+
+        const auto selfSlices = slice(2);
+        const auto otherSlices = other.slice(2);
+
+        // TODO: cache slices and determine relevant slices to check instead of looping through all of them
+        for (const auto& otherSlice : otherSlices)
+        {
+            const SDL_Rect otherSliceCopy = otherSlice;
+            for (const auto& selfSlice : selfSlices)
+            {
+                // Adjust the position of selfSlice based on potentialPosition
+                SDL_Rect adjustedSelfSlice = selfSlice;
+                adjustedSelfSlice.x += static_cast<int>(potentialPosition.x - other.getSdlRect().x);
+                adjustedSelfSlice.y += static_cast<int>(potentialPosition.y - other.getSdlRect().y);
+
+                // Check for intersection between slices
+                if (SDL_HasIntersection(&adjustedSelfSlice, &otherSliceCopy) == SDL_TRUE)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    default:
+        return false;
+    }
 }
 
-bool Sprite<RectangularCollision>::isCollisionSprite() const
-{
-    return true;
-}
-
-bool Sprite<RectangularCollision>::hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const
-{
-    return other.hasCollisionWithImpl(*this, potentialPosition);
-}
-
-bool Sprite<RectangularCollision>::hasCollisionWithImpl(const Sprite<RectangularCollision>& other, Vector2<double> potentialPosition) const
-{
-    //puts("rectangular and rectangular");
-    SDL_Rect selfRect = m_rect;
-    selfRect.x = static_cast<int>(potentialPosition.x);
-    selfRect.y = static_cast<int>(potentialPosition.y);
-    const SDL_Rect otherRect = other.getSdlRect();
-    return SDL_HasIntersection(&selfRect, &otherRect) == SDL_TRUE;
-}
-
-bool Sprite<RectangularCollision>::hasCollisionWithImpl(const Sprite<PolygonCollision>& other, Vector2<double> potentialPosition) const
-{
-    //puts("rectangular and polygon");
-    return false;
-}
-
-// Sprite<PolygonCollision>
-
-Sprite<PolygonCollision>::Sprite(const char* path, const Observer* observer)
-    : SpriteBase(path), m_observer(observer) {}
-
-const Observer* Sprite<PolygonCollision>::getCollisionObserver() const
-{
-    return m_observer;
-}
-
-bool Sprite<PolygonCollision>::isCollisionSprite() const
-{
-    return true;
-}
-
-std::vector<SDL_Rect> Sprite<PolygonCollision>::slice(const int sliceThickness ) const
+std::vector<SDL_Rect> Sprite::slice(const int sliceThickness ) const
 {
     std::vector<SDL_Rect> slicedRects;
 
@@ -322,61 +311,19 @@ std::vector<SDL_Rect> Sprite<PolygonCollision>::slice(const int sliceThickness )
     return slicedRects;
 }
 
-//void Sprite<PolygonCollision>::printSlices()
-//{
-//    for (const auto& [x, y, w, h] : m_slices)
-//        std::cout << "SDL_Rect { x: " << x << ", y: " << y << ", w: " << w << ", h: " << h << " }\n";
-//}
+void Sprite::printSlices()
+{
+    for (const auto& [x, y, w, h] : m_slices)
+        std::cout << "SDL_Rect { x: " << x << ", y: " << y << ", w: " << w << ", h: " << h << " }\n";
+}
 
 // Test function
-std::vector<std::shared_ptr<Sprite<NoCollision>>> Sprite<PolygonCollision>::processSlices()
+std::vector<std::shared_ptr<Sprite>> Sprite::processSlices() const
 {
-    std::vector<std::shared_ptr<Sprite<NoCollision>>> rects;
-    auto slices = slice(5);
+    std::vector<std::shared_ptr<Sprite>> rects;
+    const auto slices = slice(10);
+    rects.reserve(slices.size());
     for (const auto& slice : slices)
-        rects.emplace_back(std::make_shared<Sprite<NoCollision>>(slice, generateRandomColor()));
+        rects.emplace_back(std::make_shared<Sprite>(slice, generateRandomColor()));
     return rects;
-}
-
-bool Sprite<PolygonCollision>::hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const
-{
-    return other.hasCollisionWithImpl(*this, potentialPosition);
-}
-
-bool Sprite<PolygonCollision>::hasCollisionWithImpl(const Sprite<PolygonCollision>& other, Vector2<double> potentialPosition) const
-{
-    // Check if the bounding boxes of the two sprites intersect
-    const SDL_Rect selfRect = m_rect;
-    SDL_Rect otherRect = other.getSdlRect();
-    otherRect.x = static_cast<int>(potentialPosition.x);
-    otherRect.y = static_cast<int>(potentialPosition.y);
-    if (SDL_HasIntersection(&selfRect, &otherRect) == SDL_FALSE)
-        return false;
-
-    const auto selfSlices = slice(2);
-    const auto otherSlices = other.slice(2);
-
-    // TODO: cache slices and determine relevant slices to check instead of looping through all of them
-    for (const auto& selfSlice : selfSlices)
-    {
-        const SDL_Rect rect1 = selfSlice;
-        for (const auto& otherSlice : otherSlices)
-        {
-            // Adjust the position of otherSlice based on potentialPosition
-            SDL_Rect adjustedOtherSlice = otherSlice;
-            adjustedOtherSlice.x += static_cast<int>(potentialPosition.x - other.getSdlRect().x);
-            adjustedOtherSlice.y += static_cast<int>(potentialPosition.y - other.getSdlRect().y);
-
-            // Check for intersection between slices
-            if (SDL_HasIntersection(&rect1, &adjustedOtherSlice) == SDL_TRUE)
-                return true;
-        }
-    }
-    return false;
-}
-
-bool Sprite<PolygonCollision>::hasCollisionWithImpl(const Sprite<RectangularCollision>& other, Vector2<double> potentialPosition) const
-{
-    //puts("polygon and rectangular");
-    return false;
 }

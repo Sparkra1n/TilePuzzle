@@ -4,58 +4,23 @@
 #include "Sprite.h"
 #include <unordered_set>
 
-class Player: public Entity
+class Player : public Sprite
 {
 public:
     Player(const char* path, const Observer* observer = nullptr, const double speed = 1.0)
-        : m_sprite(path, observer), m_speed(speed) {}
+        : Sprite(path, observer) ,m_speed(speed) {}
     ~Player() override = default;
 
-    void walkTo(Vector2<int> coordinates);
+    void walkTo(const Vector2<int> coordinates) { m_targetPosition = coordinates; }
     void handleEvent(const SDL_Event& event);
     void update(double deltaTime) override;
-    void setSpeed(double speed);
-    void setCoordinates(Vector2<double> coordinates);
-    void cacheTexture(SDL_Renderer* renderer) override;
-    void clearRenderFlag() override;
-    void setRenderFlag() override;
-    void clearCacheFlag() override;
-    void setCacheFlag() override;
-    //void setRgbaOffset(SDL_Color color, bool subtractive = false) override;
-    void setRgbaOffset_(SDL_Color offset) override;
-    //void clearRgbaOffsetFlag() override;
-    //void setRgbaOffsetFlag() override;
-    void resetSurface() override;
-
-    //TODO: refactor player functions such as this one
-    //[[nodiscard]] std::pair<SDL_Color, bool> getRgbaOffset() const override;
-
-    [[nodiscard]] Sprite<PolygonCollision>* getSprite();
-
-    [[nodiscard]] SDL_Rect getSdlRect() const override;
-
-    [[nodiscard]] SDL_Surface* getSdlSurface() const;
-
-    [[nodiscard]] Vector2<double> getCoordinates() const;
-
-    [[nodiscard]] double getSpeed() const;
-
-    [[nodiscard]] bool isDummy() const override;
-
-    [[nodiscard]] bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
-
-    [[nodiscard]] SDL_Texture* getCachedTexture() const override;
-
-    [[nodiscard]] bool getRenderFlag() const override;
-
-    bool getCacheFlag() const override;
-
-    //bool getRgbaOffsetFlag() const override;
+    void setSpeed(const double speed) { m_speed = speed; }
+    [[nodiscard]] double getSpeed() const { return m_speed; }
+    [[nodiscard]] bool isDummy() const override { return false; }
 
 private:
-    Vector2<int> m_clickTargetPosition{};
+    Vector2<int> m_targetPosition{};
     std::unordered_set<SDL_Keycode> m_pressedKeys;
-    Sprite<PolygonCollision> m_sprite;
     double m_speed = 1.0;
 };
 

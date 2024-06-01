@@ -44,7 +44,7 @@ Game::Game()
         10
     );
 
-    m_rectangle = std::make_shared<Sprite<RectangularCollision>>(
+    m_rectangle = std::make_shared<Sprite>(
         RECTANGLE_SPRITE_PATH,
         this
     );
@@ -53,7 +53,7 @@ Game::Game()
     {
         for (auto& tile : row)
         {
-            tile = std::make_shared<Sprite<NoCollision>>(GRASS_SPRITE_PATH);
+            tile = std::make_shared<Sprite>(GRASS_SPRITE_PATH);
             tile->setCoordinates({
                 static_cast<double>(&tile - row.data()) * Tile::TILE_DIMENSIONS.x,
                 static_cast<double>(&row - m_tileMap.data()) * Tile::TILE_DIMENSIONS.y
@@ -62,12 +62,15 @@ Game::Game()
         }
     }
     m_rectangle->setCoordinates({ 100, 100 });
-    constexpr SDL_Rect mouseRect = { 0, 0, 5, 5 };
-    m_mouse = std::make_shared<Sprite<RectangularCollision>>(mouseRect, SDL_Color{}, this);
-    m_mouse->clearRenderFlag();
+    constexpr SDL_Rect mouseRect = { 0, 0, 1, 1 };
+    m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, this);
+    //m_mouse->clearRenderFlag();
 
+    auto a = m_rectangle->processSlices();
+    for (auto& b : a)
+        addForegroundEntity(b);
     addForegroundEntity(m_mouse);
-    addForegroundEntity(m_rectangle);
+    //addForegroundEntity(m_rectangle);
     addBackgroundEntity(m_player);
 }
 
@@ -133,17 +136,16 @@ void Game::update(const double deltaTime) const
         if (other == m_mouse)
             continue;
 
-        const SDL_Rect mouseRect = m_mouse->getSdlRect();
-        const SDL_Rect otherRect = other->getSdlRect();
-
-        if (SDL_HasIntersection(&mouseRect, &otherRect) == SDL_TRUE)
+        if (m_mouse->hasCollisionWith(*other,
+            m_mouse->getCoordinates(),
+            CollisionDetectionMethod::RectangularCollision))
         {
             mouseHoveredOverForegroundEntity = true;
-            other->setRgbaOffset_({ 30, 30, 30, 0 });
+            other->setRgbaOffset({ 30, 30, 30, 0 });
         }
         else
         {
-            other->setRgbaOffset_({});
+            other->setRgbaOffset({});
         }
     }
 
@@ -159,16 +161,16 @@ void Game::update(const double deltaTime) const
     {
         if (tile != prevTile)
         {
-            tile->setRgbaOffset_({ 30, 30, 30, 0 });
+            tile->setRgbaOffset({ 30, 30, 30, 0 });
             if (prevTile)
-                prevTile->setRgbaOffset_({});
+                prevTile->setRgbaOffset({});
             prevTile = tile;
         }
     }
     else
     {
         if (prevTile)
-            prevTile->setRgbaOffset_({});
+            prevTile->setRgbaOffset({});
     }
 }
 
@@ -201,7 +203,7 @@ bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPositi
             return false;
         }
 
-        if (entity.hasCollisionWith(*other, potentialPosition))
+        if (entity.hasCollisionWith(*other, potentialPosition, CollisionDetectionMethod::PolygonCollision))
         {
             return false;
         }

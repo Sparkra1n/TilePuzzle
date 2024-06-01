@@ -15,5 +15,5 @@ namespace Tile
         TallGrass,
     };
 
-    typedef std::array<std::array<std::shared_ptr<Sprite<NoCollision>>, BOARD_COLUMNS>, BOARD_ROWS> TileMap;
+    typedef std::array<std::array<std::shared_ptr<Sprite>, BOARD_COLUMNS>, BOARD_ROWS> TileMap;
 }

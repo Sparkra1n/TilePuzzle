@@ -13,7 +13,7 @@
 #include "Tile.h"
 #include "Vector2.h"
 #include "Player.h"
-#include "Projectile.h"
+#include "TileObject.h"
 #include "Renderer.h"
 
 class Game : public Observer
@@ -50,11 +50,11 @@ private:
     Tile::TileMap m_tileMap;
     std::vector<std::shared_ptr<Entity>> m_backgroundEntities;   // Collection of background entities in the game
     std::vector<std::shared_ptr<Entity>> m_foregroundEntities;   // Collection of foreground entities in the game
-    std::shared_ptr<Sprite<NoCollision>> m_cursor;
-    std::shared_ptr<Sprite<RectangularCollision>> m_mouse;
+    std::shared_ptr<Sprite> m_cursor;
+    std::shared_ptr<Sprite> m_mouse;
     std::shared_ptr<Player> m_player;                            // Player sprite
-    std::shared_ptr<Sprite<RectangularCollision>> m_rectangle;   // Example sprite
-    std::shared_ptr<Sprite<NoCollision>> m_projectile;           // Example Projectile
+    std::shared_ptr<Sprite> m_rectangle;                         // Example sprite
+    std::shared_ptr<Sprite> m_projectile;                        // Example TileObject
     SDL_Window* m_window{};                                      // SDL window instance
     SDL_Event m_windowEvent{};                                   // SDL event for window handling
     std::unique_ptr<Renderer> m_renderer;

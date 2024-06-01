@@ -24,7 +24,7 @@
 struct Color
 {
     Color (const int r, const int g, const int b, const int a)
-		: r(r), g(g), b(b), a(a) {}
+        : r(r), g(g), b(b), a(a) {}
 
     Color() = default;
 
@@ -101,313 +101,103 @@ inline bool operator!=(const SDL_Color first, const SDL_Color second) noexcept
     return !(first == second);
 }
 
-// Type for specifying collision detection system
-struct NoCollision;
-struct RectangularCollision;
-struct PolygonCollision;
+enum class CollisionDetectionMethod
+{
+    NoCollision = 0,
+    RectangularCollision,
+    PolygonCollision
+};
 
-template <typename T>
-struct IsAllowedCollisionMethod : std::disjunction<
-    std::is_same<T, NoCollision>,
-    std::is_same<T, RectangularCollision>,
-    std::is_same<T, PolygonCollision>
-> {};
-
-template <typename T, std::enable_if_t<IsAllowedCollisionMethod<T>::value, bool> = true>
-class Sprite;
-
-// Brief Base class for all game objects
 class Entity
 {
 public:
     Entity() = default;
     virtual ~Entity() = default;
-
-    /**
-     * @brief Performs any time-related calculations
-     * @param deltaTime 
-     */
     virtual void update(double deltaTime);
-
-    /**
-     * @brief Whether not the object is a Sprite
-     * @returns false for any base class or class having Sprite as a member
-     */
+    virtual void setRgbaOffset(SDL_Color offset) {}
+    virtual void setRenderFlag() {}
+    virtual void setCoordinates(Vector2<double> coordinates) {}
+    virtual void setXCoordinate(double value) {}
+    virtual void setYCoordinate(double value) {}
+    virtual void clearRenderFlag() {}
+    virtual void setCacheFlag() {}
+    virtual void clearCacheFlag() {}
+    virtual void resetSurface() {}
+    virtual void cacheTexture(SDL_Renderer* renderer) {}
     [[nodiscard]] virtual bool isDummy() const;
-
-    /**
-     * @brief Returns the Sprite's SDL_Rect
-     * @return SDL_Rect
-     */
-    [[nodiscard]] virtual SDL_Rect getSdlRect() const = 0;
-
-    /**
-     * @brief Caches the sprite's SDL_Surface to allow for faster rendering
-     * @param renderer
-     */
-    virtual void cacheTexture(SDL_Renderer* renderer) = 0;
-
-    /**
-     * @brief Returns the Sprite's cached SDL_Texture
-     * @return SDL_Texture*
-     */
-    [[nodiscard]] virtual SDL_Texture* getCachedTexture() const = 0;
-
-    /**
-     * @brief 
-     * @param other other sprite
-     * @param potentialPosition potential position vector of this sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    virtual bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const { return false; }
-
-    //virtual SpriteFlag* getSpriteFlag() = 0;
-
-    virtual void setRgbaOffset_(SDL_Color offset) = 0;
-
-    /**
-     * @brief Show a hidden sprite
-     */
-    virtual void setRenderFlag() = 0;
-
-    /**
-     * @brief Skip the sprite when rendering
-     */
-    virtual void clearRenderFlag() = 0;
-
-    /**
-     * @brief Indicate the sprite texture needs to be re-cached
-     */
-    virtual void setCacheFlag() = 0;
-
-    /**
-     * @brief Clear the indication that the sprite texture needs to be re-cached
-     */
-    virtual void clearCacheFlag() = 0;
-
-    /**
-     * @brief A flag for whether the sprite is visible or hidden
-     * @return
-     */
+    [[nodiscard]] virtual Vector2<double> getCoordinates() const { return {}; }
+    [[nodiscard]] virtual SDL_Rect getSdlRect() const { return SDL_Rect{}; }
+    [[nodiscard]] virtual SDL_Texture* getCachedTexture() const { return nullptr; }
+    [[nodiscard]] virtual std::vector<SDL_Rect> slice(int sliceThickness) const { return {}; }
     [[nodiscard]] virtual bool getRenderFlag() const { return true; }
-
-    /**
-     * @brief A flag for whether the sprite texture needs sto be cached again
-     * @return
-     */
     [[nodiscard]] virtual bool getCacheFlag() const { return false; }
+    [[nodiscard]] virtual const Observer* getCollisionObserver() const { return nullptr; }
 
     /**
-     * @brief Resets SDL_Surface to its initial state by replacing it with a copy of the original surface.
-     * 
+     * @param other other entity
+     * @param potentialPosition this entity's potential position
+     * @param collisionDetectionMethod 
+     * @return 
      */
-    virtual void resetSurface() = 0;
-
-    //TODO: fix derived class not being able to access
-//protected:
-    [[nodiscard]]
-    virtual bool hasCollisionWithImpl(const Sprite<NoCollision>& other, Vector2<double> potentialPosition) const { return false; }
-
-    [[nodiscard]]
-    virtual bool hasCollisionWithImpl(const Sprite<RectangularCollision>& other, Vector2<double> potentialPosition) const { return false; }
-
-    [[nodiscard]]
-    virtual bool hasCollisionWithImpl(const Sprite<PolygonCollision>& other, Vector2<double> potentialPosition) const { return false; }
+    [[nodiscard]] virtual bool hasCollisionWith(const Entity& other, 
+                                                Vector2<double> potentialPosition, 
+                                                CollisionDetectionMethod collisionDetectionMethod) const { return false; }
 };
 
-class SpriteBase : public Entity
+class Sprite : public Entity
 {
 public:
-    SpriteBase(const char* path, const Observer* observer = nullptr);
-    SpriteBase(SDL_Rect rect, SDL_Color color);
-    SpriteBase(const SpriteBase& other);
-    ~SpriteBase() override;
+    Sprite(const char* path, const Observer* observer = nullptr);
+    Sprite(SDL_Rect rect, SDL_Color color, const Observer* observer = nullptr);
+    Sprite(const Sprite& other);
+    ~Sprite() override;
 
-    void setCoordinates(Vector2<double> coordinates);
-
-    void setXCoordinate(double value);
-
-    void setYCoordinate(double value);
-
-    /**
-     * @brief Caches the sprite's SDL_Surface to allow for faster rendering
-     * @param renderer 
-     */
+    void setCoordinates(Vector2<double> coordinates) override;
+    void setXCoordinate(double value) override;
+    void setYCoordinate(double value) override;
     void cacheTexture(SDL_Renderer* renderer) override;
-
-    /**
-     * @brief Show the sprite.
-     */
     void setRenderFlag() override { m_renderFlag = true; }
-
-    /**
-     * @brief Hide the sprite.
-     */
     void clearRenderFlag() override { m_renderFlag = false; }
-
-    /**
-     * @brief Indicate the sprite texture needs to be re-cached
-     */
     void setCacheFlag() override { m_cacheFlag = true; }
-
-    /**
-     * @brief Clear the indication that the sprite texture needs to be re-cached
-     */
     void clearCacheFlag() override { m_cacheFlag = false; }
+    void setRgbaOffset(SDL_Color offset) override;
+    void resetSurface() override;
+    void printSlices();
 
-    /**
-     * @brief Returns the flag on whether the sprite needs to be cached.
-     * @return bool
-     */
     [[nodiscard]] bool getCacheFlag() const override { return m_cacheFlag; }
-
-    void setRgbaOffset_(SDL_Color offset) override;
-
+    [[nodiscard]] bool getRenderFlag() const override { return m_renderFlag; }
     [[nodiscard]] static SDL_Color generateRandomColor();
-
     [[nodiscard]] virtual bool isCollisionSprite() const;
-
     [[nodiscard]] bool isDummy() const override;
-
     [[nodiscard]] uint8_t getPixelAlpha(int x, int y) const;
-
     [[nodiscard]] SDL_Rect getSdlRect() const override;
-
-    [[nodiscard]] Vector2<double> getCoordinates() const;
-
-    /**
-     * @brief Returns the Sprite's cached SDL_Surface
-     * @return SDL_Surface*
-     */
+    [[nodiscard]] Vector2<double> getCoordinates() const override { return m_coordinates; }
     [[nodiscard]] SDL_Surface* getSdlSurface() const;
-
-    /**
-     * @brief Returns the Sprite's cached SDL_Texture
-     * @return SDL_Texture*
-     */
     [[nodiscard]] SDL_Texture* getCachedTexture() const override;
+    [[nodiscard]] std::vector<SDL_Rect> slice(int sliceThickness) const override;
+    [[nodiscard]] const Observer* getCollisionObserver() const override { return m_observer; }
+    [[nodiscard]] std::vector<std::shared_ptr<Sprite>> processSlices() const;
 
     /**
-     * @brief A flag for whether the sprite is visible or hidden
+     * @param other other entity
+     * @param potentialPosition this entity's potential position
+     * @param collisionDetectionMethod
      * @return
      */
-    [[nodiscard]] bool getRenderFlag() const override { return m_renderFlag; }
-
-    void resetSurface() override;
+    [[nodiscard]] bool hasCollisionWith(const Entity& other, 
+        Vector2<double> potentialPosition, 
+        CollisionDetectionMethod collisionDetectionMethod) const override;
 
 protected:
     static SDL_Surface* loadSurface(const char* path);
-    bool m_renderFlag{};     // Whether the sprite is visible
-    bool m_cacheFlag{};      // Whether the SDL_Texture need to be re-cached
-
-    Color m_rgbaOffset{}; // RGBA offset
+    bool m_renderFlag{};
+    bool m_cacheFlag{};
+    Color m_rgbaOffset{};
     SDL_Rect m_rect{};
     Vector2<double> m_coordinates{};
-
-    //TODO: making this const will cause problems with functions like SDL_FreeSurface
-	const SDL_Surface* m_surfaceOriginal; // A copy to allow m_surface to be reset when needed.
-    SDL_Surface* m_surface{}; // This is where the sprite data is manipulated.
-    SDL_Texture* m_texture{}; // This is where the cached sprite is stored.
-};
-
-template <typename T, std::enable_if_t<IsAllowedCollisionMethod<T>::value, bool>>
-class Sprite : public SpriteBase {};
-
-template <>
-class Sprite<NoCollision> : public SpriteBase
-{
-public:
-    Sprite(const char* path);
-    Sprite(SDL_Rect rect, SDL_Color color);
-};
-
-template <>
-class Sprite<RectangularCollision> : public SpriteBase
-{
-public:
-    Sprite(const char* path, const Observer* observer);
-    Sprite(SDL_Rect rect, SDL_Color color, const Observer* observer);
-
-    [[nodiscard]] const Observer* getCollisionObserver() const;
-
-    [[nodiscard]] bool isCollisionSprite() const override;
-
-    /**
-     * @brief Whether a RectangularCollision Sprite will collide with anything
-     * @param other other sprite
-     * @param potentialPosition potential position vector of this sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
-
-protected:
-    /**
-     * @brief Checks collisions between RectangularCollision and RectangularCollision
-     * @param other other sprite
-     * @param potentialPosition potential position vector of the other sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    bool hasCollisionWithImpl(const Sprite<RectangularCollision>& other, Vector2<double> potentialPosition) const override;
-
-    /**
-     * @brief Checks collisions between RectangularCollision and PolygonCollision
-     * @param other other sprite
-     * @param potentialPosition potential position vector of the other sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    bool hasCollisionWithImpl(const Sprite<PolygonCollision>& other, Vector2<double> potentialPosition) const override;
-
+    const SDL_Surface* m_surfaceOriginal;
+    SDL_Surface* m_surface{};
+    SDL_Texture* m_texture{};
     const Observer* m_observer;
-};
-
-template<>
-class Sprite<PolygonCollision> : public SpriteBase
-{
-public:
-    Sprite(const char* path, const Observer* observer);
-
-    [[nodiscard]] std::vector<SDL_Rect> slice(int sliceThickness) const;
-
-    [[nodiscard]] const Observer* getCollisionObserver() const;
-
-    [[nodiscard]] bool isCollisionSprite() const override;
-
-    // Test function
-    [[nodiscard]]
-    std::vector<std::shared_ptr<Sprite<NoCollision>>> processSlices();
-
-    /**
-     * @brief
-     * @param other other sprite
-     * @param potentialPosition potential position vector of this sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    bool hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const override;
-
-protected:
-    /**
-     * @brief Checks collisions between PolygonCollision and PolygonCollision
-     * @param other other sprite
-     * @param potentialPosition potential position vector of the other sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    bool hasCollisionWithImpl(const Sprite<PolygonCollision>& other, Vector2<double> potentialPosition) const override;
-
-    /**
-     * @brief Checks collisions between PolygonCollision and RectangularCollision
-     * @param other other sprite
-     * @param potentialPosition potential position vector of the other sprite
-     * @return bool
-     */
-    [[nodiscard]]
-    bool hasCollisionWithImpl(const Sprite<RectangularCollision>& other, Vector2<double> potentialPosition) const override;
-
-    const Observer* m_observer;
-    std::vector<SDL_Rect> m_slices;
+    std::vector<SDL_Rect> m_slices{};
 };
