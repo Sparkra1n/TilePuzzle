@@ -316,12 +316,12 @@ std::vector<std::shared_ptr<Sprite>> Sprite::processSlices() const
     return rects;
 }
 
-void Sprite::focus()
+void Sprite::onFocus()
 {
     setRgbaOffset({ 30, 30, 30, 0 });
 }
 
-void Sprite::blur()
+void Sprite::onBlur()
 {
     setRgbaOffset({ 0,0,0,0 });
 }

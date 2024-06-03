@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <iostream>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <vector>
@@ -111,8 +112,9 @@ public:
     Entity() = default;
     virtual ~Entity() = default;
     virtual void update(const double deltaTime) {}
-    virtual void focus() {}
-    virtual void blur() {}
+    virtual void onFocus() {}
+    virtual void onBlur() {}
+    virtual void onClick() { std::cout << this << " clicked\n"; }
     virtual void setRgbaOffset(SDL_Color offset) {}
     virtual void setRenderFlag() {}
     virtual void setCoordinates(Vector2<double> coordinates) {}
@@ -153,8 +155,8 @@ public:
     Sprite(const Sprite& other);
     ~Sprite() override;
 
-    virtual void focus() override;
-    virtual void blur() override;
+	void onFocus() override;
+	void onBlur() override;
     void setCoordinates(Vector2<double> coordinates) override;
     void setXCoordinate(double value) override;
     void setYCoordinate(double value) override;
@@ -219,6 +221,9 @@ public:
         const Observer* observer = nullptr)
 	    : Sprite(rect, color, observer), m_speed(speed) {}
 
+	//void onClick() override {}
+	//void onFocus() override {}
+	//void onBlur() override {}
     virtual void goTo(const Vector2<int> coordinates) { m_targetPosition = coordinates; }
     virtual void handleEvent(const SDL_Event& event) {}
     void setSpeed(const double speed) { m_speed = speed; }

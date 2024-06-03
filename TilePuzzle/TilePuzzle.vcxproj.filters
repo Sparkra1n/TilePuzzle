@@ -68,7 +68,7 @@
     <ClInclude Include="Sprites.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EntityTracker.h">
+    <ClInclude Include="EntityStateTracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,11 +3,11 @@
 #include "Sprite.h"
 #include <memory>
 
-class EntityTracker
+class EntityStateTracker
 {
 public:
-	EntityTracker() = default;
-	~EntityTracker() = default;
+	EntityStateTracker() = default;
+	~EntityStateTracker() = default;
 
 	void setFocused(const std::shared_ptr<Entity>& entity)
 	{
@@ -17,12 +17,12 @@ public:
 
 		if (m_previous)
 		{
-			m_previous->blur();
+			m_previous->onBlur();
 			m_previous = m_current;
-			m_previous->blur();
+			m_previous->onBlur();
 		}
 		m_previous = m_current;
-		entity->focus();
+		entity->onFocus();
 		m_current = entity;
 	}
 

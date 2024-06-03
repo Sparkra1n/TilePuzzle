@@ -99,8 +99,11 @@ void Game::run()
             case SDL_MOUSEBUTTONDOWN:
                 if (m_windowEvent.button.button == SDL_BUTTON_LEFT)
                 {
-                    const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSdlRect());
-                    m_player->goTo(destination);
+                    //const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSdlRect());
+                    //m_player->goTo(destination);
+                    m_hoverTracker.getFocused()->onClick();
+
+
                 }
                 else if (m_windowEvent.button.button == SDL_BUTTON_RIGHT)
                 {
@@ -130,7 +133,6 @@ void Game::update(const double deltaTime)
     SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
     m_mouse->setCoordinates(mousePosition);
     bool mouseHoveredOverForegroundEntity = false;
-
     for (const auto& other : m_foregroundEntities)
     {
         if (other == m_mouse)

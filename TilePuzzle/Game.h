@@ -8,7 +8,7 @@
 #include <SDL_image.h>
 #include "SDLExceptions.h"
 #include "Counter.h"
-#include "EntityTracker.h"
+#include "EntityStateTracker.h"
 #include "Sprite.h"
 #include "Sprites.h"
 #include "Tile.h"
@@ -69,6 +69,5 @@ private:
     SDL_Window* m_window{};                                      // SDL window instance
     SDL_Event m_windowEvent{};                                   // SDL event for window handling
     std::unique_ptr<Renderer> m_renderer;
-    EntityTracker m_hoverTracker;
-    //std::shared_ptr<Entity> m_hoveredEntity{};
+    EntityStateTracker m_hoverTracker;
 };

@@ -157,7 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Counter.h" />
-    <ClInclude Include="EntityTracker.h" />
+    <ClInclude Include="EntityStateTracker.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Observer.h" />
     <ClInclude Include="Player.h" />
