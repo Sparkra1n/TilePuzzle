@@ -64,7 +64,7 @@ Game::Game()
     m_rectangle->setCoordinates({ 100, 100 });
     constexpr SDL_Rect mouseRect = { 0, 0, 1, 1 };
     m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, this);
-    //m_mouse->clearRenderFlag();
+    m_mouse->clearRenderFlag();
 
     auto a = m_rectangle->processSlices();
     for (auto& b : a)
@@ -100,7 +100,7 @@ void Game::run()
                 if (m_windowEvent.button.button == SDL_BUTTON_LEFT)
                 {
                     const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSdlRect());
-                    m_player->walkTo(destination);
+                    m_player->goTo(destination);
                 }
                 else if (m_windowEvent.button.button == SDL_BUTTON_RIGHT)
                 {
@@ -115,13 +115,13 @@ void Game::run()
         }
         counter.update();
         const double deltaTime = counter.getDeltaTime();
-        std::cout << "FPS: " << counter.getFPS() << "\r";
+        std::cout << "FPS: " << counter.getFps() << "\r";
         update(deltaTime);
         draw();
     }
 }
 
-void Game::update(const double deltaTime) const
+void Game::update(const double deltaTime)
 {
     for (const auto& entity : m_backgroundEntities)
         entity->update(deltaTime);
@@ -141,11 +141,7 @@ void Game::update(const double deltaTime) const
             CollisionDetectionMethod::RectangularCollision))
         {
             mouseHoveredOverForegroundEntity = true;
-            other->setRgbaOffset({ 30, 30, 30, 0 });
-        }
-        else
-        {
-            other->setRgbaOffset({});
+            m_hoverTracker.setFocused(other);
         }
     }
 
@@ -155,22 +151,9 @@ void Game::update(const double deltaTime) const
     const int y = tileCoords.y / Tile::TILE_DIMENSIONS.y;
     const std::shared_ptr<Entity> tile = m_tileMap[y][x];
 
-    static std::shared_ptr<Entity> prevTile = nullptr;
-
     if (!mouseHoveredOverForegroundEntity)
     {
-        if (tile != prevTile)
-        {
-            tile->setRgbaOffset({ 30, 30, 30, 0 });
-            if (prevTile)
-                prevTile->setRgbaOffset({});
-            prevTile = tile;
-        }
-    }
-    else
-    {
-        if (prevTile)
-            prevTile->setRgbaOffset({});
+        m_hoverTracker.setFocused(tile);
     }
 }
 
@@ -191,22 +174,16 @@ bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPositi
     for (const auto& other : m_backgroundEntities)
     {
         if (other.get() == &entity)
-        {
             continue;
-        }
 
         if (potentialPosition.x + entity.getSdlRect().w > Tile::WINDOW_DIMENSIONS.x 
             || potentialPosition.x < 0
             || potentialPosition.y + entity.getSdlRect().h > Tile::WINDOW_DIMENSIONS.y
             || potentialPosition.y < 0)
-        {
             return false;
-        }
 
         if (entity.hasCollisionWith(*other, potentialPosition, CollisionDetectionMethod::PolygonCollision))
-        {
             return false;
-        }
     }
     return true;
 }

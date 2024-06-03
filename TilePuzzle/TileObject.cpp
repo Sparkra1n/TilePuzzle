@@ -1,40 +1,43 @@
-//#include "TileObject.h"
-//
-//TileObject::TileObject(const char* path, 
-//                       const int damage,
-//                       Vector2<double> velocity, 
-//                       const Observer* observer)
-//		: m_sprite(path, observer),
-//          m_velocity(velocity)
-//{}
-//
-//void TileObject::update(const double deltaTime)
-//{
-//	const Vector2<double> newPosition = m_sprite.getCoordinates() + m_velocity * deltaTime;
-//	m_sprite.setCoordinates(newPosition);
-//}
-//
-//bool TileObject::hasCollisionWith(const Entity& other, Vector2<double> potentialPosition) const
-//{
-//	return m_sprite.hasCollisionWith(other, potentialPosition);
-//}
-//
-//Vector2<double> TileObject::getVelocity() const
-//{
-//	return m_velocity;
-//}
-//
-//void TileObject::cacheTexture(SDL_Renderer* renderer)
-//{
-//	m_sprite.cacheTexture(renderer);
-//}
-//
-//SDL_Texture* TileObject::getCachedTexture() const
-//{
-//	return m_sprite.getCachedTexture();
-//}
-//SDL_Rect TileObject::getSdlRect() const
-//{
-//	return m_sprite.getSdlRect();
-//}
-//
+#include "TileObject.h"
+
+void TileObject::update(double deltaTime)
+{
+    //TODO: Remove duplicate code below with the Player class
+    if (m_targetPosition.x != -1)
+    {
+        if (std::abs(m_targetPosition.x - getCoordinates().x) > 1)
+        {
+            Vector2<double> coordinates = getCoordinates();
+            const int sign = coordinates.x < m_targetPosition.x ? 1 : -1;
+            coordinates.x += m_speed * deltaTime * sign;
+            setCoordinates(coordinates);
+        }
+        else
+        {
+            setXCoordinate(m_targetPosition.x);
+            m_targetPosition.x = -1;
+        }
+    }
+    if (m_targetPosition.y != -1 && m_targetPosition.x == -1)
+    {
+        if (std::abs(m_targetPosition.y - getCoordinates().y) > 1)
+        {
+            Vector2<double> coordinates = getCoordinates();
+            const int sign = coordinates.y < m_targetPosition.y ? 1 : -1;
+            coordinates.y += m_speed * deltaTime * sign;
+            setCoordinates(coordinates);
+        }
+        else
+        {
+            setYCoordinate(m_targetPosition.y);
+            m_targetPosition.y = -1;
+        }
+    }
+}
+
+void TileObject::handleEvent(const SDL_Event& event)
+{
+    
+}
+
+

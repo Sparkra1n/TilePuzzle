@@ -7,11 +7,8 @@
  */
 
 #pragma once
-
-#include <iostream>
 #include <SDL.h>
 #include <SDL_image.h>
-#include <tuple>
 #include <vector>
 #include <random>
 #include "SDLExceptions.h"
@@ -113,7 +110,9 @@ class Entity
 public:
     Entity() = default;
     virtual ~Entity() = default;
-    virtual void update(double deltaTime);
+    virtual void update(const double deltaTime) {}
+    virtual void focus() {}
+    virtual void blur() {}
     virtual void setRgbaOffset(SDL_Color offset) {}
     virtual void setRenderFlag() {}
     virtual void setCoordinates(Vector2<double> coordinates) {}
@@ -124,7 +123,7 @@ public:
     virtual void clearCacheFlag() {}
     virtual void resetSurface() {}
     virtual void cacheTexture(SDL_Renderer* renderer) {}
-    [[nodiscard]] virtual bool isDummy() const;
+    [[nodiscard]] virtual bool isDummy() const { return true; }
     [[nodiscard]] virtual Vector2<double> getCoordinates() const { return {}; }
     [[nodiscard]] virtual SDL_Rect getSdlRect() const { return SDL_Rect{}; }
     [[nodiscard]] virtual SDL_Texture* getCachedTexture() const { return nullptr; }
@@ -144,6 +143,8 @@ public:
                                                 CollisionDetectionMethod collisionDetectionMethod) const { return false; }
 };
 
+//TODO: What if the sprite checks if the mouse is hovering over it when update is called on it?
+
 class Sprite : public Entity
 {
 public:
@@ -152,6 +153,8 @@ public:
     Sprite(const Sprite& other);
     ~Sprite() override;
 
+    virtual void focus() override;
+    virtual void blur() override;
     void setCoordinates(Vector2<double> coordinates) override;
     void setXCoordinate(double value) override;
     void setYCoordinate(double value) override;
@@ -190,7 +193,7 @@ public:
 
 protected:
     static SDL_Surface* loadSurface(const char* path);
-    bool m_renderFlag{};
+    bool m_renderFlag{}; // Controls the visibility of the sprite
     bool m_cacheFlag{};
     Color m_rgbaOffset{};
     SDL_Rect m_rect{};
@@ -200,4 +203,28 @@ protected:
     SDL_Texture* m_texture{};
     const Observer* m_observer;
     std::vector<SDL_Rect> m_slices{};
+};
+
+class ExtendedSprite : public Sprite
+{
+public:
+    ExtendedSprite(const char* path, 
+        const double speed = 1, 
+        const Observer* observer = nullptr)
+	    : Sprite(path, observer), m_speed(speed) {}
+
+    ExtendedSprite(const SDL_Rect rect, 
+        const SDL_Color color, 
+        const double speed = 1, 
+        const Observer* observer = nullptr)
+	    : Sprite(rect, color, observer), m_speed(speed) {}
+
+    virtual void goTo(const Vector2<int> coordinates) { m_targetPosition = coordinates; }
+    virtual void handleEvent(const SDL_Event& event) {}
+    void setSpeed(const double speed) { m_speed = speed; }
+    [[nodiscard]] double getSpeed() const { return m_speed; }
+    [[nodiscard]] bool isDummy() const override { return false; }
+protected:
+    Vector2<int> m_targetPosition{};
+    double m_speed;
 };

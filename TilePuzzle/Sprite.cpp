@@ -10,17 +10,6 @@
 #include <iostream>
 #include <iomanip>
 
-void Entity::update(double deltaTime)
-{
-    
-}
-
-// Whether object is a plain Entity
-bool Entity::isDummy() const
-{
-    return false;
-}
-
 Sprite::Sprite(const char* path, const Observer* observer)
     : m_renderFlag(true), m_observer(observer)
 {
@@ -162,7 +151,6 @@ void Sprite::resetSurface()
 void Sprite::setRgbaOffset(const SDL_Color offset)
 {
     const Color deltaColor = Color(offset) - m_rgbaOffset;
-
     // Lock surface to access pixel data
     if (SDL_LockSurface(m_surface) != 0)
         return;
@@ -326,4 +314,14 @@ std::vector<std::shared_ptr<Sprite>> Sprite::processSlices() const
     for (const auto& slice : slices)
         rects.emplace_back(std::make_shared<Sprite>(slice, generateRandomColor()));
     return rects;
+}
+
+void Sprite::focus()
+{
+    setRgbaOffset({ 30, 30, 30, 0 });
+}
+
+void Sprite::blur()
+{
+    setRgbaOffset({ 0,0,0,0 });
 }

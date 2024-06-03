@@ -1,56 +1,45 @@
 #pragma once
 
-#include <SDL.h>
-#include <functional>
-#include <utility>
+#include <chrono>
+#include <algorithm>
 
 class Counter
 {
 public:
-    Counter(const unsigned int targetFPS) : m_targetDeltaTime(1.0 / targetFPS) {}
+    using clock = std::chrono::steady_clock;
 
+    Counter(const unsigned int targetFps) : 
+        m_targetDeltaTime(1.0 / targetFps), 
+        m_lastTime(clock::now())
+    {}
 
     void update()
     {
         ++m_frameCount;
+        const auto currentTime = clock::now();
+        const std::chrono::duration<double> elapsed = currentTime - m_lastTime;
 
-        const uint32_t currentTicks = SDL_GetTicks();
-        const uint32_t elapsedTicks = currentTicks - m_lastTicks;
+        // Apply a simple low-pass filter to smooth deltaTime
+        constexpr double alpha = 0; // Smoothing factor between 0 and 1
+        const double rawDeltaTime = elapsed.count();
+        m_deltaTime = alpha * rawDeltaTime + (1.0 - alpha) * m_deltaTime;
 
-        m_deltaTime = static_cast<double>(elapsedTicks) / 1000.0;  // Convert elapsed ticks to seconds
-
-        if (elapsedTicks >= 1000)
+        if (elapsed >= std::chrono::seconds(1))
         {
-            m_fps = static_cast<double>(m_frameCount);  // Calculate FPS based on frames in last second
+            m_fps = m_frameCount;
             m_frameCount = 0;
-            m_lastTicks = currentTicks;
+            m_lastTime = currentTime;
         }
     }
 
-
-    [[nodiscard]] double getFPS() const
-    {
-        return m_fps;
-    }
-
-    [[nodiscard]] double getDeltaTime() const
-    {
-        return std::min(m_targetDeltaTime, m_deltaTime);
-    }
+    [[nodiscard]] uint32_t getFps() const { return m_fps; }
+    [[nodiscard]] double getDeltaTime() const { return std::min(m_targetDeltaTime, m_deltaTime); }
 
 private:
-    //void callUpdateFunction(const std::function<void(double)>& updateFunction, const double timeInterval) const
-    //{
-    //    if (m_deltaTime >= timeInterval) 
-    //    {
-    //        updateFunction(m_deltaTime);
-    //    }
-    //}
-
     double m_targetDeltaTime;
     uint32_t m_frameCount{};
-    uint32_t m_lastTicks{};
-    double m_fps{};
+    clock::time_point m_lastTime;
+    uint32_t m_fps{};
     double m_deltaTime{};
 };
 

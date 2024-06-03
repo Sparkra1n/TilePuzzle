@@ -8,6 +8,7 @@
 #include <SDL_image.h>
 #include "SDLExceptions.h"
 #include "Counter.h"
+#include "EntityTracker.h"
 #include "Sprite.h"
 #include "Sprites.h"
 #include "Tile.h"
@@ -16,7 +17,7 @@
 #include "TileObject.h"
 #include "Renderer.h"
 
-class Game : public Observer
+class Game final : public Observer
 {
 public:
     Game(const Game&) = delete;
@@ -24,7 +25,7 @@ public:
     static Game& get() { static Game instance; return instance; }
     void draw();
     void run();
-    void update(double deltaTime) const;
+    void update(double deltaTime);
     void addBackgroundEntity(const std::shared_ptr<Entity>& entity);
     void addForegroundEntity(const std::shared_ptr<Entity>& entity);
     bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
@@ -43,6 +44,16 @@ public:
      * @return Vector2<int>
      */
     static Vector2<int> enclosingTileCenter(Vector2<int> position, SDL_Rect spriteDimensions);
+
+    enum class Direction
+    {
+        Nowhere = 0,
+        North,
+        South,
+        East,
+        West
+    };
+
 private:
     Game();
     ~Game() override;
@@ -58,4 +69,6 @@ private:
     SDL_Window* m_window{};                                      // SDL window instance
     SDL_Event m_windowEvent{};                                   // SDL event for window handling
     std::unique_ptr<Renderer> m_renderer;
+    EntityTracker m_hoverTracker;
+    //std::shared_ptr<Entity> m_hoveredEntity{};
 };

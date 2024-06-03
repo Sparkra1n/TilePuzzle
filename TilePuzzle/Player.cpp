@@ -75,19 +75,7 @@ void Player::update(const double deltaTime)
         return;
 
     if (getCollisionObserver()->canMoveTo(*this, potentialPosition))
-    {
-        // Update exact position
         setCoordinates(potentialPosition);
-
-        // Update screen position
-        //m_sprite.setDimensions(static_cast<int>(potentialPosition.x), static_cast<int>(potentialPosition.y));
-    }
-
-    // Collisions will result in the object sliding along the surface if the player comes an angle != 90 degrees
-    else
-    {
-        //Vector2 resultantDirection = 
-    }
 }
 
 void Player::handleEvent(const SDL_Event& event)
