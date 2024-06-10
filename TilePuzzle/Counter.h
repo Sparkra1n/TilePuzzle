@@ -19,10 +19,9 @@ public:
         const auto currentTime = clock::now();
         const std::chrono::duration<double> elapsed = currentTime - m_lastTime;
 
-        // Apply a simple low-pass filter to smooth deltaTime
-        constexpr double alpha = 0; // Smoothing factor between 0 and 1
+
         const double rawDeltaTime = elapsed.count();
-        m_deltaTime = alpha * rawDeltaTime + (1.0 - alpha) * m_deltaTime;
+        m_deltaTime = rawDeltaTime;
 
         if (elapsed >= std::chrono::seconds(1))
         {

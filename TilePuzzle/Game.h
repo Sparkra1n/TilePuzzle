@@ -10,12 +10,16 @@
 #include "Counter.h"
 #include "EntityStateTracker.h"
 #include "Sprite.h"
-#include "Sprites.h"
+#include "Textures.h"
 #include "Tile.h"
 #include "Vector2.h"
 #include "Player.h"
-#include "TileObject.h"
+#include "Slab.h"
 #include "Renderer.h"
+#include "TileMap.h"
+
+//TODO: Each Tile should point to the Entity that is sitting on it
+//TODO: When a Sprite's onClick fn is called, it should be passed as a ClickEvent to its observer.
 
 class Game final : public Observer
 {
@@ -28,44 +32,19 @@ public:
     void update(double deltaTime);
     void addBackgroundEntity(const std::shared_ptr<Entity>& entity);
     void addForegroundEntity(const std::shared_ptr<Entity>& entity);
-    bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
-
-    /**
-     * @brief Returns the top left coordinate of the tile enclosing the mouse.
-     * @param position
-     * @return Vector2<int>
-     */
-    static Vector2<int> enclosingTile(Vector2<int> position);
-
-    /**
-     * @brief Returns the offset coordinate to place a sprite exactly in the center of a tile.
-     * @param position
-     * @param spriteDimensions
-     * @return Vector2<int>
-     */
-    static Vector2<int> enclosingTileCenter(Vector2<int> position, SDL_Rect spriteDimensions);
-
-    enum class Direction
-    {
-        Nowhere = 0,
-        North,
-        South,
-        East,
-        West
-    };
+    //bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
 
 private:
     Game();
     ~Game() override;
-    std::array<std::array<Tile::TileCode, Tile::BOARD_COLUMNS>, Tile::BOARD_ROWS> m_board{};
-    Tile::TileMap m_tileMap;
+    TileMap m_tileMap;
     std::vector<std::shared_ptr<Entity>> m_backgroundEntities;   // Collection of background entities in the game
     std::vector<std::shared_ptr<Entity>> m_foregroundEntities;   // Collection of foreground entities in the game
     std::shared_ptr<Sprite> m_cursor;
     std::shared_ptr<Sprite> m_mouse;
     std::shared_ptr<Player> m_player;                            // Player sprite
     std::shared_ptr<Sprite> m_rectangle;                         // Example sprite
-    std::shared_ptr<Sprite> m_projectile;                        // Example TileObject
+    std::shared_ptr<Sprite> m_projectile;                        // Example Slab
     SDL_Window* m_window{};                                      // SDL window instance
     SDL_Event m_windowEvent{};                                   // SDL event for window handling
     std::unique_ptr<Renderer> m_renderer;

@@ -6,6 +6,9 @@ void Player::update(const double deltaTime)
     // Handle Click controls
     if (m_targetPosition.x != -1)
     {
+        if (m_observer->getEnclosingTile({ m_targetPosition.x, 0 })->isOccupied())
+            return;
+
         if (std::abs(m_targetPosition.x - getCoordinates().x) > 1)
         {
             Vector2<double> coordinates = getCoordinates();
@@ -21,6 +24,9 @@ void Player::update(const double deltaTime)
     }
     if (m_targetPosition.y != -1 && m_targetPosition.x == -1)
     {
+        if (m_observer->getEnclosingTile({ m_targetPosition.x, 0 })->isOccupied())
+            return;
+
         if (std::abs(m_targetPosition.y - getCoordinates().y) > 1)
         {
             Vector2<double> coordinates = getCoordinates();
@@ -32,50 +38,51 @@ void Player::update(const double deltaTime)
         {
             setYCoordinate(m_targetPosition.y);
             m_targetPosition.y = -1;
+            //std::cout << "finished walking\n";
         }
     }
 
     // Handle WASD controls
-    Vector2<double> direction{};
+    //Vector2<double> direction{};
 
-    for (const SDL_Keycode key : m_pressedKeys)
-    {
-        switch (key)
-        {
-        case SDLK_w:
-            direction.y += -1;
-            break;
-        case SDLK_s:
-            direction.y += 1;
-            break;
-        case SDLK_a:
-            direction.x += -1;
-            break;
-        case SDLK_d:
-            direction.x += 1;
-            break;
-        default:
-            break;
-        }
-    }
+    //for (const SDL_Keycode key : m_pressedKeys)
+    //{
+    //    switch (key)
+    //    {
+    //    case SDLK_w:
+    //        direction.y += -1;
+    //        break;
+    //    case SDLK_s:
+    //        direction.y += 1;
+    //        break;
+    //    case SDLK_a:
+    //        direction.x += -1;
+    //        break;
+    //    case SDLK_d:
+    //        direction.x += 1;
+    //        break;
+    //    default:
+    //        break;
+    //    }
+    //}
 
-    // Calculate the potential new position based on the direction and speed
-    // Normalize the direction vector
-    const double magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
-    if (magnitude > 0)
-        direction /= magnitude;
-    else
-        return;
+    //// Calculate the potential new position based on the direction and speed
+    //// Normalize the direction vector
+    //const double magnitude = sqrt(direction.x * direction.x + direction.y * direction.y);
+    //if (magnitude > 0)
+    //    direction /= magnitude;
+    //else
+    //    return;
 
-    // Calculate the potential new position based on the normalized direction and speed
-    const Vector2<double> potentialPosition = getCoordinates() + direction * m_speed * deltaTime;
+    //// Calculate the potential new position based on the normalized direction and speed
+    //const Vector2<double> potentialPosition = getCoordinates() + direction * m_speed * deltaTime;
 
-    // Skip further checking if it is not a collision sprite
-    if (getCollisionObserver() == nullptr)
-        return;
+    //// Skip further checking if it is not a collision sprite
+    //if (getCollisionObserver() == nullptr)
+    //    return;
 
-    if (getCollisionObserver()->canMoveTo(*this, potentialPosition))
-        setCoordinates(potentialPosition);
+    //if (getCollisionObserver()->canMoveTo(*this, potentialPosition))
+    //    setCoordinates(potentialPosition);
 }
 
 void Player::handleEvent(const SDL_Event& event)

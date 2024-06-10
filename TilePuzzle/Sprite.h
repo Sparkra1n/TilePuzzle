@@ -16,6 +16,23 @@
 #include "Vector2.h"
 #include "Observer.h"
 
+class Entity;
+class Sprite;
+class Tile;
+class ExtendedSprite;
+
+class Observer
+{
+public:
+    Observer() = default;
+    virtual ~Observer() = default;
+    //[[nodiscard]] virtual bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const { return true; }
+    virtual const Tile* getEnclosingTile(Vector2<int> position) const { return nullptr; }
+    void setSuperior(const Observer* superior) { m_superior = superior; }
+protected:
+    const Observer* m_superior{};
+};
+
 /**
  * @brief Color struct that allows values < 0 and > 255 in order to perform offset operations on SDL_Colors
  */
@@ -154,7 +171,7 @@ public:
     Sprite(SDL_Rect rect, SDL_Color color, const Observer* observer = nullptr);
     Sprite(const Sprite& other);
     ~Sprite() override;
-
+    void onClick() override;
 	void onFocus() override;
 	void onBlur() override;
     void setCoordinates(Vector2<double> coordinates) override;
@@ -233,3 +250,26 @@ protected:
     Vector2<int> m_targetPosition{};
     double m_speed;
 };
+
+class Tile : public Sprite
+{
+public:
+    enum class TileCode
+    {
+        BareGrass = 0,
+        ShortGrass,
+        TallGrass,
+    };
+
+    Tile(TileCode tileCode)
+        : Sprite(Textures::GRASS_SPRITE_PATH), m_tileCode(tileCode) {}
+
+    void setOccupationFlag() { m_isOccupied = true; }
+    void clearOccupationFlag() { m_isOccupied = false; }
+    [[nodiscard]] bool isOccupied() const { return m_isOccupied; }
+
+private:
+    TileCode m_tileCode;
+    bool m_isOccupied{};
+};
+

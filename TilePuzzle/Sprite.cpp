@@ -241,6 +241,11 @@ bool Sprite::hasCollisionWith(const Entity& other,
     }
 }
 
+void Sprite::onClick()
+{
+    std::cout << "(Sprite) notifying observer of the click\n";
+}
+
 std::vector<SDL_Rect> Sprite::slice(const int sliceThickness ) const
 {
     std::vector<SDL_Rect> slicedRects;

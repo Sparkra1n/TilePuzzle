@@ -15,8 +15,8 @@ Game::Game()
         "Tile Puzzle",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        Tile::WINDOW_DIMENSIONS.x,
-        Tile::WINDOW_DIMENSIONS.y,
+        Window::WINDOW_DIMENSIONS.x,
+        Window::WINDOW_DIMENSIONS.y,
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
     );
 
@@ -31,39 +31,34 @@ Game::Game()
 
     SDL_SetRenderDrawBlendMode(m_renderer->getRenderer(), SDL_BLENDMODE_BLEND);
 
-    // Initialize background
-    m_board =
-    {
-
-    };
-
     // Load sprites
     m_player = std::make_shared<Player>(
-        PLAYER_SPRITE_PATH,
-        this,
+	    Textures::PLAYER_SPRITE_PATH,
+        &m_tileMap,
         10
     );
 
     m_rectangle = std::make_shared<Sprite>(
-        RECTANGLE_SPRITE_PATH,
-        this
+	    Textures::RECTANGLE_SPRITE_PATH,
+        &m_tileMap
     );
 
-    for (auto& row : m_tileMap) 
+    auto tiles = m_tileMap.getTiles();
+    for (auto& row : *tiles) 
     {
         for (auto& tile : row)
         {
-            tile = std::make_shared<Sprite>(GRASS_SPRITE_PATH);
+            tile = std::make_shared<Tile>(Tile::TileCode::BareGrass);
             tile->setCoordinates({
-                static_cast<double>(&tile - row.data()) * Tile::TILE_DIMENSIONS.x,
-                static_cast<double>(&row - m_tileMap.data()) * Tile::TILE_DIMENSIONS.y
+                static_cast<double>(&tile - row.data()) * Window::TILE_DIMENSIONS.x,
+                static_cast<double>(&row - tiles->data()) * Window::TILE_DIMENSIONS.y
             });
             addBackgroundEntity(tile);
         }
     }
     m_rectangle->setCoordinates({ 100, 100 });
     constexpr SDL_Rect mouseRect = { 0, 0, 1, 1 };
-    m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, this);
+    m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, &m_tileMap);
     m_mouse->clearRenderFlag();
 
     auto a = m_rectangle->processSlices();
@@ -72,6 +67,7 @@ Game::Game()
     addForegroundEntity(m_mouse);
     //addForegroundEntity(m_rectangle);
     addBackgroundEntity(m_player);
+    std::cout << "finished init\n";
 }
 
 void Game::draw()
@@ -99,11 +95,9 @@ void Game::run()
             case SDL_MOUSEBUTTONDOWN:
                 if (m_windowEvent.button.button == SDL_BUTTON_LEFT)
                 {
-                    //const Vector2<int> destination = enclosingTileCenter({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSdlRect());
+                    //const Vector2<int> destination = m_tileMap.enclosingTileCenterCoordinates({ m_windowEvent.button.x, m_windowEvent.button.y }, m_player->getSdlRect());
                     //m_player->goTo(destination);
                     m_hoverTracker.getFocused()->onClick();
-
-
                 }
                 else if (m_windowEvent.button.button == SDL_BUTTON_RIGHT)
                 {
@@ -118,7 +112,7 @@ void Game::run()
         }
         counter.update();
         const double deltaTime = counter.getDeltaTime();
-        std::cout << "FPS: " << counter.getFps() << "\r";
+        //std::cout << "FPS: " << counter.getFps() << "\r";
         update(deltaTime);
         draw();
     }
@@ -148,10 +142,10 @@ void Game::update(const double deltaTime)
     }
 
     // Get the tile coordinates based on mouse position
-    const Vector2<int> tileCoords = enclosingTile(mousePosition);
-    const int x = tileCoords.x / Tile::TILE_DIMENSIONS.x;
-    const int y = tileCoords.y / Tile::TILE_DIMENSIONS.y;
-    const std::shared_ptr<Entity> tile = m_tileMap[y][x];
+    const Vector2<int> tileCoords = m_tileMap.enclosingTileCoordinates(mousePosition);
+    const int x = tileCoords.x / Window::TILE_DIMENSIONS.x;
+    const int y = tileCoords.y / Window::TILE_DIMENSIONS.y;
+    std::shared_ptr<Entity> tile = m_tileMap.getTile(x, y);
 
     if (!mouseHoveredOverForegroundEntity)
     {
@@ -171,38 +165,24 @@ void Game::addForegroundEntity(const std::shared_ptr<Entity>& entity)
     m_foregroundEntities.push_back(entity);
 }
 
-bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPosition) const
-{
-    for (const auto& other : m_backgroundEntities)
-    {
-        if (other.get() == &entity)
-            continue;
-
-        if (potentialPosition.x + entity.getSdlRect().w > Tile::WINDOW_DIMENSIONS.x 
-            || potentialPosition.x < 0
-            || potentialPosition.y + entity.getSdlRect().h > Tile::WINDOW_DIMENSIONS.y
-            || potentialPosition.y < 0)
-            return false;
-
-        if (entity.hasCollisionWith(*other, potentialPosition, CollisionDetectionMethod::PolygonCollision))
-            return false;
-    }
-    return true;
-}
-
-Vector2<int> Game::enclosingTile(const Vector2<int> position)
-{
-    int x = position.x - position.x % Tile::TILE_DIMENSIONS.x;
-    int y = position.y - position.y % Tile::TILE_DIMENSIONS.y;
-    return {x, y};
-}
-
-Vector2<int> Game::enclosingTileCenter(const Vector2<int> position, const SDL_Rect spriteDimensions)
-{
-    int x = position.x - position.x % Tile::TILE_DIMENSIONS.x + Tile::TILE_DIMENSIONS.x / 2 - spriteDimensions.w / 2;
-    int y = position.y - position.y % Tile::TILE_DIMENSIONS.y + Tile::TILE_DIMENSIONS.y / 2 - spriteDimensions.h / 2;
-    return { x, y };
-}
+//bool Game::canMoveTo(const Entity& entity, const Vector2<double> potentialPosition) const
+//{
+//    for (const auto& other : m_backgroundEntities)
+//    {
+//        if (other.get() == &entity)
+//            continue;
+//
+//        if (potentialPosition.x + entity.getSdlRect().w > Window::WINDOW_DIMENSIONS.x 
+//            || potentialPosition.x < 0
+//            || potentialPosition.y + entity.getSdlRect().h > Window::WINDOW_DIMENSIONS.y
+//            || potentialPosition.y < 0)
+//            return false;
+//
+//        if (entity.hasCollisionWith(*other, potentialPosition, CollisionDetectionMethod::PolygonCollision))
+//            return false;
+//    }
+//    return true;
+//}
 
 Game::~Game()
 {

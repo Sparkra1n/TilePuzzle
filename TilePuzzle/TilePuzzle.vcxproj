@@ -151,7 +151,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
-    <ClCompile Include="TileObject.cpp" />
+    <ClCompile Include="Slab.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
@@ -161,13 +161,15 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Observer.h" />
     <ClInclude Include="Player.h" />
-    <ClInclude Include="TileObject.h" />
+    <ClInclude Include="Slab.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="SDLExceptions.h" />
     <ClInclude Include="Sprite.h" />
-    <ClInclude Include="Sprites.h" />
+    <ClInclude Include="Textures.h" />
     <ClInclude Include="Tile.h" />
+    <ClInclude Include="TileMap.h" />
     <ClInclude Include="Vector2.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
