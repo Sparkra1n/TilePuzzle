@@ -1,47 +1,8 @@
 #include "Player.h"
 #include <iostream>
 
-void Player::update(const double deltaTime)
-{
-    // Handle Click controls
-    if (m_targetPosition.x != -1)
-    {
-        if (m_observer->getEnclosingTile({ m_targetPosition.x, 0 })->isOccupied())
-            return;
-
-        if (std::abs(m_targetPosition.x - getCoordinates().x) > 1)
-        {
-            Vector2<double> coordinates = getCoordinates();
-            const int sign = coordinates.x < m_targetPosition.x ? 1 : -1;
-            coordinates.x += m_speed * deltaTime * sign;
-            setCoordinates(coordinates);
-        }
-        else
-        {
-            setXCoordinate(m_targetPosition.x);
-            m_targetPosition.x = -1;
-        }
-    }
-    if (m_targetPosition.y != -1 && m_targetPosition.x == -1)
-    {
-        if (m_observer->getEnclosingTile({ m_targetPosition.x, 0 })->isOccupied())
-            return;
-
-        if (std::abs(m_targetPosition.y - getCoordinates().y) > 1)
-        {
-            Vector2<double> coordinates = getCoordinates();
-            const int sign = coordinates.y < m_targetPosition.y ? 1 : -1;
-            coordinates.y += m_speed * deltaTime * sign;
-            setCoordinates(coordinates);
-        }
-        else
-        {
-            setYCoordinate(m_targetPosition.y);
-            m_targetPosition.y = -1;
-            //std::cout << "finished walking\n";
-        }
-    }
-
+//void Player::update(const double deltaTime)
+//{
     // Handle WASD controls
     //Vector2<double> direction{};
 
@@ -83,7 +44,7 @@ void Player::update(const double deltaTime)
 
     //if (getCollisionObserver()->canMoveTo(*this, potentialPosition))
     //    setCoordinates(potentialPosition);
-}
+//}
 
 void Player::handleEvent(const SDL_Event& event)
 {

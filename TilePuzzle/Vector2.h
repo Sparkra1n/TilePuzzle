@@ -99,3 +99,11 @@ std::ostream& operator<<(std::ostream& os, const Vector2<T>& v)
     return os;
 }
 
+template <>
+struct std::hash<Vector2<int>>
+{
+	size_t operator()(const Vector2<int>& v) const noexcept
+	{
+		return hash<int>()(v.x) ^ (hash<int>()(v.y) << 1);
+	}
+};

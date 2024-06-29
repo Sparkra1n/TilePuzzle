@@ -15,23 +15,7 @@
 #include "SDLExceptions.h"
 #include "Vector2.h"
 #include "Observer.h"
-
-class Entity;
-class Sprite;
-class Tile;
-class ExtendedSprite;
-
-class Observer
-{
-public:
-    Observer() = default;
-    virtual ~Observer() = default;
-    //[[nodiscard]] virtual bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const { return true; }
-    virtual const Tile* getEnclosingTile(Vector2<int> position) const { return nullptr; }
-    void setSuperior(const Observer* superior) { m_superior = superior; }
-protected:
-    const Observer* m_superior{};
-};
+#include "Textures.h"
 
 /**
  * @brief Color struct that allows values < 0 and > 255 in order to perform offset operations on SDL_Colors
@@ -126,6 +110,9 @@ enum class CollisionDetectionMethod
 class Entity
 {
 public:
+    // for testing only
+    int id = 0;
+
     Entity() = default;
     virtual ~Entity() = default;
     virtual void update(const double deltaTime) {}
@@ -137,6 +124,7 @@ public:
     virtual void setCoordinates(Vector2<double> coordinates) {}
     virtual void setXCoordinate(double value) {}
     virtual void setYCoordinate(double value) {}
+    virtual void goTo(const Vector2<int> coordinates) { }
     virtual void clearRenderFlag() {}
     virtual void setCacheFlag() {}
     virtual void clearCacheFlag() {}
@@ -228,9 +216,9 @@ class ExtendedSprite : public Sprite
 {
 public:
     ExtendedSprite(const char* path, 
-        const double speed = 1, 
+        const double speed = 5, 
         const Observer* observer = nullptr)
-	    : Sprite(path, observer), m_speed(speed) {}
+	    : Sprite(path, observer), m_targetPosition({-1, -1}), m_speed(speed) {}
 
     ExtendedSprite(const SDL_Rect rect, 
         const SDL_Color color, 
@@ -238,38 +226,15 @@ public:
         const Observer* observer = nullptr)
 	    : Sprite(rect, color, observer), m_speed(speed) {}
 
-	//void onClick() override {}
-	//void onFocus() override {}
-	//void onBlur() override {}
-    virtual void goTo(const Vector2<int> coordinates) { m_targetPosition = coordinates; }
+    void update(const double deltaTime) override;
+	void goTo(const Vector2<int> coordinates) override { m_targetPosition = coordinates; }
     virtual void handleEvent(const SDL_Event& event) {}
     void setSpeed(const double speed) { m_speed = speed; }
     [[nodiscard]] double getSpeed() const { return m_speed; }
     [[nodiscard]] bool isDummy() const override { return false; }
 protected:
-    Vector2<int> m_targetPosition{};
+    Vector2<int> m_targetPosition;
     double m_speed;
 };
 
-class Tile : public Sprite
-{
-public:
-    enum class TileCode
-    {
-        BareGrass = 0,
-        ShortGrass,
-        TallGrass,
-    };
-
-    Tile(TileCode tileCode)
-        : Sprite(Textures::GRASS_SPRITE_PATH), m_tileCode(tileCode) {}
-
-    void setOccupationFlag() { m_isOccupied = true; }
-    void clearOccupationFlag() { m_isOccupied = false; }
-    [[nodiscard]] bool isOccupied() const { return m_isOccupied; }
-
-private:
-    TileCode m_tileCode;
-    bool m_isOccupied{};
-};
 

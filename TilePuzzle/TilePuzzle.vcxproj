@@ -151,22 +151,21 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
-    <ClCompile Include="Slab.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="TileMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Counter.h" />
     <ClInclude Include="EntityStateTracker.h" />
+    <ClInclude Include="Events.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Observer.h" />
     <ClInclude Include="Player.h" />
-    <ClInclude Include="Slab.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="SDLExceptions.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Textures.h" />
-    <ClInclude Include="Tile.h" />
     <ClInclude Include="TileMap.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="Window.h" />

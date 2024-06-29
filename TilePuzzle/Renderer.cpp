@@ -1,5 +1,8 @@
 ﻿#include "Renderer.h"
-#include "Tile.h"
+
+#include <array>
+
+#include "TileMap.h"
 
 Renderer::Renderer(
     SDL_Window* window,
@@ -22,30 +25,26 @@ Renderer::~Renderer()
     }
 }
 
-void Renderer::render(const std::vector<std::shared_ptr<Entity>>& entities) const
+void Renderer::renderAll(const std::vector<std::shared_ptr<Entity>>& entities) const
 {
     for (const auto& entity : entities)
     {
-        if (!entity->getRenderFlag())
-            continue;
-
-        if (entity->getCacheFlag())
-        {
-            entity->cacheTexture(m_renderer.get());
-            entity->clearCacheFlag();
-        }
-
-        SDL_Rect entityRect = entity->getSdlRect();
-        SDL_RenderCopy(m_renderer.get(), entity->getCachedTexture(), nullptr, &entityRect);
+        render(entity);
     }
 }
 
-SDL_Renderer* Renderer::getRenderer() const
+void Renderer::render(const std::shared_ptr<Entity>& entity) const
 {
-    return m_renderer.get();
+    if (!entity->getRenderFlag())
+        return;
+
+    if (entity->getCacheFlag())
+    {
+        entity->cacheTexture(m_renderer.get());
+        entity->clearCacheFlag();
+    }
+
+    SDL_Rect entityRect = entity->getSdlRect();
+    SDL_RenderCopy(m_renderer.get(), entity->getCachedTexture(), nullptr, &entityRect);
 }
 
-void Renderer::clear() const
-{
-    SDL_RenderClear(m_renderer.get());
-}

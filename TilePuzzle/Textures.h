@@ -8,8 +8,7 @@ public:
 
 	// Game
 	static constexpr const char* PLAYER_SPRITE_PATH = "./sprites/sword.bmp";
-	static constexpr const char* CURSOR_SPRITE_PATH = "./sprites/Highlight.bmp";
-	static constexpr const char* RECTANGLE_SPRITE_PATH = "./sprites/curvy.bmp";
+	static constexpr const char* SLAB_SPRITE_PATH = "./sprites/rock.bmp";
 
 	// Tiles
 	static constexpr const char* GRASS_SPRITE_PATH = "./sprites/grass.bmp";
