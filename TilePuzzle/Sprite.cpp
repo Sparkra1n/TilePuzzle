@@ -55,7 +55,7 @@ Sprite::~Sprite()
     SDL_FreeSurface(const_cast<SDL_Surface*>(m_surfaceOriginal)); // Cast away const for freeing
 }
 
-void Sprite::setCoordinates(const Vector2<double> coordinates)
+void Sprite::setPosition(const Vector2<double> coordinates)
 {
     m_coordinates = coordinates;
     m_rect.x = static_cast<int>(coordinates.x);
@@ -334,35 +334,33 @@ void Sprite::onBlur()
 
 void ExtendedSprite::update(const double deltaTime)
 {
-    // Handle Click controls
-    if (m_targetPosition.x != -1)
+    if (!m_checkpoints.empty())
     {
-        if (std::abs(m_targetPosition.x - getCoordinates().x) > 1)
+        Vector2<double> target = m_checkpoints.front();
+
+        // Move horizontally if x coordinates are different
+        if (std::abs(target.x - getPosition().x) > 1)
         {
-            Vector2<double> coordinates = getCoordinates();
-            const int sign = coordinates.x < m_targetPosition.x ? 1 : -1;
+            Vector2<double> coordinates = getPosition();
+            const int sign = coordinates.x < target.x ? 1 : -1;
             coordinates.x += m_speed * deltaTime * sign;
-            setCoordinates(coordinates);
+            setPosition(coordinates);
         }
-        else
+
+        // Move vertically if y coordinates are different
+        else if (std::abs(target.y - getPosition().y) > 1) 
         {
-            setXCoordinate(m_targetPosition.x);
-            m_targetPosition.x = -1;
-        }
-    }
-    if (m_targetPosition.y != -1 && m_targetPosition.x == -1)
-    {
-        if (std::abs(m_targetPosition.y - getCoordinates().y) > 1)
-        {
-            Vector2<double> coordinates = getCoordinates();
-            const int sign = coordinates.y < m_targetPosition.y ? 1 : -1;
+            Vector2<double> coordinates = getPosition();
+            const int sign = coordinates.y < target.y ? 1 : -1;
             coordinates.y += m_speed * deltaTime * sign;
-            setCoordinates(coordinates);
+            setPosition(coordinates);
         }
+
+        // Reached the checkpoint
         else
         {
-            setYCoordinate(m_targetPosition.y);
-            m_targetPosition.y = -1;
+            setPosition(target);
+            m_checkpoints.erase(m_checkpoints.begin());
         }
     }
 }

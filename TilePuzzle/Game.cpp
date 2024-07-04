@@ -42,7 +42,7 @@ Game::Game()
 
     for (auto& entity : m_tileMap->getTiles())
     {
-    	addBackgroundEntity(entity);
+        addBackgroundEntity(entity);
     }
     constexpr SDL_Rect mouseRect = { 0, 0, 1, 1 };
     m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, this);
@@ -50,12 +50,6 @@ Game::Game()
 
     addForegroundEntity(m_mouse);
     addBackgroundEntity(m_player);
-}
-
-void Game::draw()
-{
-    m_renderer->renderMultiple(m_backgroundEntities, m_foregroundEntities);
-    SDL_UpdateWindowSurface(m_window);
 }
 
 void Game::run()
@@ -70,7 +64,8 @@ void Game::run()
         const double deltaTime = counter.getDeltaTime();
         std::cout << "FPS: " << counter.getFps() << "\r";
         update(deltaTime);
-        draw();
+        m_renderer->renderMultiple(m_backgroundEntities, m_foregroundEntities);
+        SDL_UpdateWindowSurface(m_window);
     }
 }
 
@@ -107,22 +102,38 @@ void Game::handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event)
     Vector2<int> mousePosition;
     SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 
-    const Vector2<int> destination = m_tileMap->enclosingTileCenterCoordinates(
-        { event.x, event.y }, m_player->getSdlRect());
-    if (m_tileMap->getEnclosingTile(destination)->getResidingEntity() == nullptr)
+    const Vector2<int> destination = m_tileMap->getEnclosingTileCenterPosition(
+        { event.x, event.y }, 
+        m_player->getSdlRect()
+    );
+
+    std::shared_ptr<Tile> tile = m_tileMap->getEnclosingTile(destination);
+    if (tile->getResidingEntity() == nullptr)
     {
-        m_player->goTo(destination);
+        std::vector<std::shared_ptr<Tile>> tiles = m_tileMap->getPathToTile(
+            m_tileMap->getEnclosingTile(m_player->getPosition()),
+            tile
+        );
+
+        std::vector<Vector2<int>> path;
+        path.reserve(tiles.size());
+        for (const auto& i : tiles)
+            path.push_back(m_tileMap->getEnclosingTileCenterPosition(
+                i->getPosition(), 
+                m_player->getSdlRect())
+            );
+        m_player->walk(path);
     }
     else
     {
-        std::shared_ptr<Tile> nextTileChoice = m_tileMap->getClosestAvailableAdjacentTile({ event.x, event.y }, m_player->getCoordinates());
+        std::shared_ptr<Tile> nextTileChoice = m_tileMap->getClosestAvailableAdjacentTile({ event.x, event.y }, m_player->getPosition());
         if (nextTileChoice)
         {
             m_player->goTo(
-                m_tileMap->enclosingTileCenterCoordinates(nextTileChoice->getCoordinates(),
+                m_tileMap->getEnclosingTileCenterPosition(nextTileChoice->getPosition(),
                 m_player->getSdlRect())
             );
-            m_tileMap->pushTile(m_tileMap->getEnclosingTile(destination)->getResidingEntity(), m_player->getCoordinates());
+            m_tileMap->pushTile(m_tileMap->getEnclosingTile(destination)->getResidingEntity(), m_player->getPosition());
         }
     }
     //m_hoverTracker.getFocused()->onClick();
@@ -137,7 +148,7 @@ void Game::handleRightMouseButtonClick(const SDL_MouseButtonEvent& event)
 
         // move into tilemap
         newSlab->id = 1;
-        newSlab->setCoordinates(TileMap::enclosingTileCenterCoordinates(enclosingTile->getCoordinates(), newSlab->getSdlRect()));
+        newSlab->setPosition(TileMap::getEnclosingTileCenterPosition(enclosingTile->getPosition(), newSlab->getSdlRect()));
         enclosingTile->setResidingEntity(newSlab);
         addForegroundEntity(newSlab);
     }
@@ -153,7 +164,7 @@ void Game::update(const double deltaTime)
 
     Vector2<int> mousePosition;
     SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-    m_mouse->setCoordinates(mousePosition);
+    m_mouse->setPosition(mousePosition);
     bool mouseHoveredOverForegroundEntity = false;
     for (const auto& other : m_foregroundEntities)
     {
@@ -161,7 +172,7 @@ void Game::update(const double deltaTime)
             continue;
 
         if (m_mouse->hasCollisionWith(*other,
-            m_mouse->getCoordinates(),
+            m_mouse->getPosition(),
             CollisionDetectionMethod::RectangularCollision))
         {
             mouseHoveredOverForegroundEntity = true;
@@ -170,7 +181,7 @@ void Game::update(const double deltaTime)
     }
 
     // Get the tile coordinates based on mouse position
-    const Vector2<int> tileCoords = m_tileMap->enclosingTileCoordinates(mousePosition);
+    const Vector2<int> tileCoords = m_tileMap->getEnclosingTilePosition(mousePosition);
     const int x = tileCoords.x / Window::TILE_DIMENSIONS.x;
     const int y = tileCoords.y / Window::TILE_DIMENSIONS.y;
     std::shared_ptr<Entity> tile = m_tileMap->getTile(x, y);

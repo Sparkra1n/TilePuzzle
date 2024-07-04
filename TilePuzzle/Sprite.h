@@ -121,7 +121,7 @@ public:
     virtual void onClick() { std::cout << this << " clicked\n"; }
     virtual void setRgbaOffset(SDL_Color offset) {}
     virtual void setRenderFlag() {}
-    virtual void setCoordinates(Vector2<double> coordinates) {}
+    virtual void setPosition(Vector2<double> coordinates) {}
     virtual void setXCoordinate(double value) {}
     virtual void setYCoordinate(double value) {}
     virtual void goTo(const Vector2<int> coordinates) { }
@@ -131,7 +131,7 @@ public:
     virtual void resetSurface() {}
     virtual void cacheTexture(SDL_Renderer* renderer) {}
     [[nodiscard]] virtual bool isDummy() const { return true; }
-    [[nodiscard]] virtual Vector2<double> getCoordinates() const { return {}; }
+    [[nodiscard]] virtual Vector2<double> getPosition() const { return {}; }
     [[nodiscard]] virtual SDL_Rect getSdlRect() const { return SDL_Rect{}; }
     [[nodiscard]] virtual SDL_Texture* getCachedTexture() const { return nullptr; }
     [[nodiscard]] virtual std::vector<SDL_Rect> slice(int sliceThickness) const { return {}; }
@@ -162,7 +162,7 @@ public:
     void onClick() override;
 	void onFocus() override;
 	void onBlur() override;
-    void setCoordinates(Vector2<double> coordinates) override;
+    void setPosition(Vector2<double> coordinates) override;
     void setXCoordinate(double value) override;
     void setYCoordinate(double value) override;
     void cacheTexture(SDL_Renderer* renderer) override;
@@ -181,7 +181,7 @@ public:
     [[nodiscard]] bool isDummy() const override;
     [[nodiscard]] uint8_t getPixelAlpha(int x, int y) const;
     [[nodiscard]] SDL_Rect getSdlRect() const override;
-    [[nodiscard]] Vector2<double> getCoordinates() const override { return m_coordinates; }
+    [[nodiscard]] Vector2<double> getPosition() const override { return m_coordinates; }
     [[nodiscard]] SDL_Surface* getSdlSurface() const;
     [[nodiscard]] SDL_Texture* getCachedTexture() const override;
     [[nodiscard]] std::vector<SDL_Rect> slice(int sliceThickness) const override;
@@ -218,7 +218,7 @@ public:
     ExtendedSprite(const char* path, 
         const double speed = 5, 
         const Observer* observer = nullptr)
-	    : Sprite(path, observer), m_targetPosition({-1, -1}), m_speed(speed) {}
+	    : Sprite(path, observer), m_speed(speed) {}
 
     ExtendedSprite(const SDL_Rect rect, 
         const SDL_Color color, 
@@ -226,14 +226,14 @@ public:
         const Observer* observer = nullptr)
 	    : Sprite(rect, color, observer), m_speed(speed) {}
 
-    void update(const double deltaTime) override;
-	void goTo(const Vector2<int> coordinates) override { m_targetPosition = coordinates; }
+    void update(double deltaTime) override;
+	void walk(const std::vector<Vector2<int>>& path) { m_checkpoints = path; }
     virtual void handleEvent(const SDL_Event& event) {}
     void setSpeed(const double speed) { m_speed = speed; }
     [[nodiscard]] double getSpeed() const { return m_speed; }
     [[nodiscard]] bool isDummy() const override { return false; }
 protected:
-    Vector2<int> m_targetPosition;
+    std::vector<Vector2<int>> m_checkpoints;
     double m_speed;
 };
 

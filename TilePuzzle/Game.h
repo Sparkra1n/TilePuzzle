@@ -1,5 +1,8 @@
 #pragma once
 
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -21,7 +24,6 @@ public:
     Game(const Game&) = delete;
     Game& operator=(const Game&) = delete;
     static Game& get() { static Game instance; return instance; }
-    void draw();
     void run();
     void handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event);
     void handleRightMouseButtonClick(const SDL_MouseButtonEvent& event);
@@ -44,4 +46,5 @@ private:
     SDL_Event m_windowEvent{};                                   // SDL event for window handling
     std::unique_ptr<Renderer> m_renderer;
     EntityStateTracker m_hoverTracker;
+    std::atomic<bool> m_isAlive{ true };
 };

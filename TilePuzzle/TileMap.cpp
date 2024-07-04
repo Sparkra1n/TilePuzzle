@@ -1,3 +1,7 @@
+
+/**
+ * @file TileMap.cpp
+ */
 #include "TileMap.h"
 
 Tile::Tile(TileCode tileCode, const std::shared_ptr<Sprite>& residingEntity)
@@ -14,20 +18,20 @@ TileMap::TileMap(int rows, int columns)
         {
             auto tile = std::make_shared<Tile>(Tile::TileCode::BareGrass);
             Vector2 coords = { j * Window::TILE_DIMENSIONS.x, i * Window::TILE_DIMENSIONS.y };
-            tile->setCoordinates(coords);
+            tile->setPosition(coords);
             m_tileMap[{j, i}] = tile;
         }
     }
 }
 
-Vector2<int> TileMap::enclosingTileCoordinates(const Vector2<int>& position)
+Vector2<int> TileMap::getEnclosingTilePosition(const Vector2<int>& position)
 {
     int x = position.x - (position.x % Window::TILE_DIMENSIONS.x);
     int y = position.y - (position.y % Window::TILE_DIMENSIONS.y);
     return { x, y };
 }
 
-Vector2<int> TileMap::enclosingTileCenterCoordinates(const Vector2<int>& position, const SDL_Rect& spriteDimensions)
+Vector2<int> TileMap::getEnclosingTileCenterPosition(const Vector2<int>& position, const SDL_Rect& spriteDimensions)
 {
     int x = position.x - (position.x % Window::TILE_DIMENSIONS.x) + (Window::TILE_DIMENSIONS.x / 2) - (spriteDimensions.w / 2);
     int y = position.y - (position.y % Window::TILE_DIMENSIONS.y) + (Window::TILE_DIMENSIONS.y / 2) - (spriteDimensions.h / 2);
@@ -36,7 +40,7 @@ Vector2<int> TileMap::enclosingTileCenterCoordinates(const Vector2<int>& positio
 
 std::shared_ptr<Tile> TileMap::getEnclosingTile(const Vector2<int>& position) const
 {
-    auto tileCoordinates = enclosingTileCoordinates(position);
+    auto tileCoordinates = getEnclosingTilePosition(position);
     int xIndex = tileCoordinates.x / Window::TILE_DIMENSIONS.x;
     int yIndex = tileCoordinates.y / Window::TILE_DIMENSIONS.y;
     if (xIndex >= Window::BOARD_COLUMNS || yIndex >= Window::BOARD_ROWS)
@@ -46,7 +50,7 @@ std::shared_ptr<Tile> TileMap::getEnclosingTile(const Vector2<int>& position) co
 
 std::shared_ptr<Tile> TileMap::getTile(int x, int y) const
 {
-    if (x >= Window::BOARD_COLUMNS || y >= Window::BOARD_ROWS)
+    if (x >= Window::BOARD_COLUMNS || y >= Window::BOARD_ROWS || x < 0 || y < 0)
         return nullptr;
     return m_tileMap.at({ x, y });
 }
@@ -63,7 +67,7 @@ std::vector<std::shared_ptr<Tile>> TileMap::getTiles() const
 
 void TileMap::placeTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>& position)
 {
-    Vector2<int> tileCoordinates = enclosingTileCoordinates(position);
+    Vector2<int> tileCoordinates = getEnclosingTilePosition(position);
     std::shared_ptr<Tile> newTile = getEnclosingTile(tileCoordinates);
     if (!newTile)
         return;
@@ -78,19 +82,19 @@ void TileMap::placeTile(const std::shared_ptr<Sprite>& entity, const Vector2<int
     }
 
     newTile->setResidingEntity(entity);
-    newTile->setCoordinates(tileCoordinates);
+    newTile->setPosition(tileCoordinates);
 }
 
-void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>& playerPosition)
+void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>& playerPosition) const
 {
     std::shared_ptr<Tile> playerTile = getEnclosingTile(playerPosition);
-    std::shared_ptr<Tile> entityTile = getEnclosingTile(entity->getCoordinates());
+    std::shared_ptr<Tile> entityTile = getEnclosingTile(entity->getPosition());
 
     if (!playerTile || !entityTile)
         return;
 
-    int dX = playerTile->getCoordinates().x - entityTile->getCoordinates().x;
-    int dY = playerTile->getCoordinates().y - entityTile->getCoordinates().y;
+    int dX = playerTile->getPosition().x - entityTile->getPosition().x;
+    int dY = playerTile->getPosition().y - entityTile->getPosition().y;
 
     if (std::abs(dX) > Window::TILE_DIMENSIONS.x || std::abs(dY) > Window::TILE_DIMENSIONS.y)
         return;
@@ -105,8 +109,8 @@ void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>
         dirY = (dY > 0) ? -1 : 1;
     }
 
-    int currentX = entityTile->getCoordinates().x / Window::TILE_DIMENSIONS.x;
-    int currentY = entityTile->getCoordinates().y / Window::TILE_DIMENSIONS.y;
+    int currentX = entityTile->getPosition().x / Window::TILE_DIMENSIONS.x;
+    int currentY = entityTile->getPosition().y / Window::TILE_DIMENSIONS.y;
 
     std::shared_ptr<Tile> targetTile = nullptr;
     while (true)
@@ -130,7 +134,7 @@ void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>
     {
         entityTile->setResidingEntity(nullptr);
         targetTile->setResidingEntity(entity);
-        Vector2 destination = enclosingTileCenterCoordinates(targetTile->getCoordinates(), entity->getSdlRect());
+        Vector2 destination = getEnclosingTileCenterPosition(targetTile->getPosition(), entity->getSdlRect());
         entity->goTo(destination);
     }
 }
@@ -145,7 +149,7 @@ std::shared_ptr<Tile> TileMap::getClosestAvailableAdjacentTile(const Vector2<int
         { 0, 1 }
     };
 
-    Vector2<int> coordinates = enclosingTileCoordinates(tilePosition);
+    Vector2<int> coordinates = getEnclosingTilePosition(tilePosition);
     int tileX = coordinates.x / Window::TILE_DIMENSIONS.x;
     int tileY = coordinates.y / Window::TILE_DIMENSIONS.y;
 
@@ -197,7 +201,7 @@ void TileMap::print()
     }
 }
 
-std::vector<std::shared_ptr<Tile>> AStar::reconstructPath(const std::shared_ptr<AStarNode>& node)
+std::vector<std::shared_ptr<Tile>> TileMap::reconstructPath(const std::shared_ptr<AStarNode>& node)
 {
     std::vector<std::shared_ptr<Tile>> path;
     auto current = node;
@@ -210,12 +214,12 @@ std::vector<std::shared_ptr<Tile>> AStar::reconstructPath(const std::shared_ptr<
     return path;
 }
 
-double AStar::heuristic(const Vector2<int>& a, const Vector2<int>& b)
+double TileMap::heuristic(const Vector2<int>& a, const Vector2<int>& b)
 {
     return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
-std::vector<std::shared_ptr<Tile>> AStar::getNeighborTiles(const TileMap& map, const std::shared_ptr<Tile>& tile)
+std::vector<std::shared_ptr<Tile>> TileMap::getNeighborTiles(const std::shared_ptr<Tile>& tile) const
 {
     static const std::vector<Vector2<int>> directions =
     {
@@ -225,25 +229,21 @@ std::vector<std::shared_ptr<Tile>> AStar::getNeighborTiles(const TileMap& map, c
         { 0, 1 }
     };
 
-    const Vector2<int> position = map.getTileCoordinates(tile);
+    const Vector2<int> position = getTileCoordinates(tile);
     std::vector<std::shared_ptr<Tile>> neighbors;
     for (const auto& dir : directions)
     {
-        auto neighbor = map.getTile(position.x + dir.x, position.y + dir.y);
+        auto neighbor = getTile(position.x + dir.x, position.y + dir.y);
         if (neighbor)
             neighbors.push_back(neighbor);
     }
     return neighbors;
 }
 
-std::vector<std::shared_ptr<Tile>> AStar::getPathToTile(
-    const TileMap& map,
-    const Vector2<int>& start,
-    const Vector2<int>& goal)
+std::vector<std::shared_ptr<Tile>> TileMap::getPathToTile(const std::shared_ptr<Tile>& startTile, const std::shared_ptr<Tile>& goalTile) const
 {
-    auto startTile = map.getTile(start.x, start.y);
-    auto goalTile = map.getTile(goal.x, goal.y);
-    if (!startTile || !goalTile) return {};
+    if (!startTile || !goalTile) 
+        return {};
 
     auto compare = [](const std::shared_ptr<AStarNode>& a, const std::shared_ptr<AStarNode>& b) -> bool
         {
@@ -254,7 +254,12 @@ std::vector<std::shared_ptr<Tile>> AStar::getPathToTile(
     std::unordered_map<std::shared_ptr<Tile>, std::shared_ptr<AStarNode>> allNodes;
     std::unordered_set<std::shared_ptr<Tile>> closedList;
 
-    auto startNode = std::make_shared<AStarNode>(startTile, nullptr, 0.0, heuristic(start, goal));
+    auto startNode = std::make_shared<AStarNode>(startTile,
+        nullptr, 
+        0.0, 
+        heuristic(getTileCoordinates(startTile), getTileCoordinates(goalTile))
+    );
+
     openList.push(startNode);
     allNodes[startTile] = startNode;
 
@@ -267,14 +272,14 @@ std::vector<std::shared_ptr<Tile>> AStar::getPathToTile(
         if (current->getTile() == goalTile)
             return reconstructPath(current);
 
-        auto neighbors = getNeighborTiles(map, current->getTile());
+        auto neighbors = getNeighborTiles(current->getTile());
         for (const auto& neighbor : neighbors)
         {
-            if (closedList.count(neighbor))
+            if (closedList.count(neighbor) || neighbor->getResidingEntity() != nullptr)
                 continue;
 
             double tentativeG = current->getGValue() + 1.0; // Assuming uniform cost for simplicity
-            double hCost = heuristic(neighbor->getCoordinates(), goal);
+            double hCost = heuristic(getTileCoordinates(neighbor), getTileCoordinates(goalTile));
             auto neighborNode = std::make_shared<AStarNode>(neighbor, current, tentativeG, hCost);
 
             if (allNodes.find(neighbor) == allNodes.end() || tentativeG < allNodes[neighbor]->getGValue()) {
