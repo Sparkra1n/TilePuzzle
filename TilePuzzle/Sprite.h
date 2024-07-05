@@ -110,9 +110,6 @@ enum class CollisionDetectionMethod
 class Entity
 {
 public:
-    // for testing only
-    int id = 0;
-
     Entity() = default;
     virtual ~Entity() = default;
     virtual void update(const double deltaTime) {}
@@ -124,7 +121,7 @@ public:
     virtual void setPosition(Vector2<double> coordinates) {}
     virtual void setXCoordinate(double value) {}
     virtual void setYCoordinate(double value) {}
-    virtual void goTo(const Vector2<int> coordinates) { }
+    virtual void walk(const std::vector<Vector2<int>>& path) {}
     virtual void clearRenderFlag() {}
     virtual void setCacheFlag() {}
     virtual void clearCacheFlag() {}
@@ -227,7 +224,7 @@ public:
 	    : Sprite(rect, color, observer), m_speed(speed) {}
 
     void update(double deltaTime) override;
-	void walk(const std::vector<Vector2<int>>& path) { m_checkpoints = path; }
+	void walk(const std::vector<Vector2<int>>& path) override { m_checkpoints = path; }
     virtual void handleEvent(const SDL_Event& event) {}
     void setSpeed(const double speed) { m_speed = speed; }
     [[nodiscard]] double getSpeed() const { return m_speed; }

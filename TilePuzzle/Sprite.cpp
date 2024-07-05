@@ -364,3 +364,5 @@ void ExtendedSprite::update(const double deltaTime)
         }
     }
 }
+
+

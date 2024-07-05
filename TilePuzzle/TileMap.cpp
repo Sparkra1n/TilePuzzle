@@ -135,7 +135,7 @@ void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>
         entityTile->setResidingEntity(nullptr);
         targetTile->setResidingEntity(entity);
         Vector2 destination = getEnclosingTileCenterPosition(targetTile->getPosition(), entity->getSdlRect());
-        entity->goTo(destination);
+        entity->walk({destination});
     }
 }
 

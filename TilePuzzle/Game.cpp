@@ -129,10 +129,19 @@ void Game::handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event)
         std::shared_ptr<Tile> nextTileChoice = m_tileMap->getClosestAvailableAdjacentTile({ event.x, event.y }, m_player->getPosition());
         if (nextTileChoice)
         {
-            m_player->goTo(
-                m_tileMap->getEnclosingTileCenterPosition(nextTileChoice->getPosition(),
-                m_player->getSdlRect())
+            std::vector<std::shared_ptr<Tile>> tiles = m_tileMap->getPathToTile(
+                m_tileMap->getEnclosingTile(m_player->getPosition()),
+                tile
             );
+
+            std::vector<Vector2<int>> path;
+            path.reserve(tiles.size());
+            for (const auto& i : tiles)
+                path.push_back(m_tileMap->getEnclosingTileCenterPosition(
+                    i->getPosition(),
+                    m_player->getSdlRect())
+                );
+            m_player->walk(path);
             m_tileMap->pushTile(m_tileMap->getEnclosingTile(destination)->getResidingEntity(), m_player->getPosition());
         }
     }
@@ -147,7 +156,6 @@ void Game::handleRightMouseButtonClick(const SDL_MouseButtonEvent& event)
         auto newSlab = std::make_shared<ExtendedSprite>(Textures::SLAB_SPRITE_PATH);
 
         // move into tilemap
-        newSlab->id = 1;
         newSlab->setPosition(TileMap::getEnclosingTileCenterPosition(enclosingTile->getPosition(), newSlab->getSdlRect()));
         enclosingTile->setResidingEntity(newSlab);
         addForegroundEntity(newSlab);
@@ -158,7 +166,6 @@ void Game::update(const double deltaTime)
 {
     for (const auto& entity : m_backgroundEntities)
         entity->update(deltaTime);
-
     for (const auto& entity : m_foregroundEntities)
         entity->update(deltaTime);
 
