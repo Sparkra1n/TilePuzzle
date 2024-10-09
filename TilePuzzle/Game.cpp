@@ -1,6 +1,6 @@
 #include "Game.h"
 
-Game::Game()
+Game::Game(SDL_Window* window, const std::string& levelPath) : m_window(window)
 {
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -10,46 +10,40 @@ Game::Game()
     if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
         throw SDLInitializationException(SDL_GetError());
 
-    // Create window
-    m_window = SDL_CreateWindow(
-        "Tile Puzzle",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        Window::WINDOW_DIMENSIONS.x,
-        Window::WINDOW_DIMENSIONS.y,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
-    );
-
-    if (m_window == nullptr)
-        throw SDLInitializationException(SDL_GetError());
-
-    m_renderer = std::make_unique<Renderer>(
-        m_window,
-        -1,
-        SDL_RENDERER_ACCELERATED
-    );
-
+    m_renderer = std::make_unique<Renderer>(m_window, -1, SDL_RENDERER_ACCELERATED);
     SDL_SetRenderDrawBlendMode(m_renderer->getRenderer(), SDL_BLENDMODE_BLEND);
 
-    // Load sprites
-    m_player = std::make_shared<Player>(
-        Textures::PLAYER_SPRITE_PATH,
-        this,
-        10
-    );
+    // Load the level requested by WindowLoader
+    loadLevel(levelPath);
+}
 
-    m_tileMap = std::make_unique<TileMap>(Window::BOARD_ROWS, Window::BOARD_COLUMNS);
+void Game::loadLevel(const std::string& path)
+{
+    // Load level-specific resources
+    m_tileMap = std::make_unique<TileMap>(path, m_renderer->getRenderer());
 
+    // Load general resources
     for (auto& entity : m_tileMap->getTiles())
     {
         addBackgroundEntity(entity);
     }
+    m_player = std::make_shared<Player>(Textures::PLAYER_SPRITE_PATH, m_renderer->getRenderer(), this, 10);
+    addBackgroundEntity(m_player);
+
+
+
+    //for (auto& entity : m_tileMap->getTiles())
+    //{
+    //    addBackgroundEntity(entity);
+    //}
     constexpr SDL_Rect mouseRect = { 0, 0, 1, 1 };
-    m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, this);
+    m_mouse = std::make_shared<Sprite>(mouseRect, SDL_Color{}, m_renderer->getRenderer(), this);
     m_mouse->clearRenderFlag();
 
-    addForegroundEntity(m_mouse);
-    addBackgroundEntity(m_player);
+    //addForegroundEntity(m_mouse);
+    //addBackgroundEntity(m_player);
+
+    //m_tileMap->getTile(6, 0)->setAsGoalTile();
 }
 
 void Game::run()
@@ -64,7 +58,7 @@ void Game::run()
         const double deltaTime = counter.getDeltaTime();
         std::cout << "FPS: " << counter.getFps() << "\r";
         update(deltaTime);
-        m_renderer->renderMultiple(m_backgroundEntities, m_foregroundEntities);
+        m_renderer->renderInLayers(m_backgroundEntities, m_foregroundEntities);
         SDL_UpdateWindowSurface(m_window);
     }
 }
@@ -108,6 +102,8 @@ void Game::handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event)
     );
 
     std::shared_ptr<Tile> tile = m_tileMap->getEnclosingTile(destination);
+
+    // Unoccupied destination tile
     if (tile->getResidingEntity() == nullptr)
     {
         std::vector<std::shared_ptr<Tile>> tiles = m_tileMap->getPathToTile(
@@ -124,6 +120,7 @@ void Game::handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event)
             );
         m_player->walk(path);
     }
+    //FIXME: Go to a neighboring tile and push the slab
     else
     {
         std::shared_ptr<Tile> nextTileChoice = m_tileMap->getClosestAvailableAdjacentTile({ event.x, event.y }, m_player->getPosition());
@@ -153,7 +150,7 @@ void Game::handleRightMouseButtonClick(const SDL_MouseButtonEvent& event)
     std::shared_ptr<Tile> enclosingTile = m_tileMap->getEnclosingTile({ event.x, event.y });
     if (enclosingTile->getResidingEntity() == nullptr)
     {
-        auto newSlab = std::make_shared<ExtendedSprite>(Textures::SLAB_SPRITE_PATH);
+        auto newSlab = std::make_shared<GameObject>(Textures::SLAB_SPRITE_PATH, m_renderer->getRenderer());
 
         // move into tilemap
         newSlab->setPosition(TileMap::getEnclosingTileCenterPosition(enclosingTile->getPosition(), newSlab->getSdlRect()));
@@ -189,25 +186,29 @@ void Game::update(const double deltaTime)
 
     // Get the tile coordinates based on mouse position
     const Vector2<int> tileCoords = m_tileMap->getEnclosingTilePosition(mousePosition);
-    const int x = tileCoords.x / Window::TILE_DIMENSIONS.x;
-    const int y = tileCoords.y / Window::TILE_DIMENSIONS.y;
+    const int x = tileCoords.x / Tile::TILE_DIMENSIONS.x;
+    const int y = tileCoords.y / Tile::TILE_DIMENSIONS.y;
     std::shared_ptr<Entity> tile = m_tileMap->getTile(x, y);
 
     if (!mouseHoveredOverForegroundEntity)
     {
         m_hoverTracker.setFocused(tile);
     }
+
+    // Check if the game has finished
+    //if (m_tileMap->isSolved())
+        //std::cout << "Game finished!\n";
 }
 
 void Game::addBackgroundEntity(const std::shared_ptr<Entity>& entity)
 {
-    entity->cacheTexture(m_renderer->getRenderer());
+    entity->cacheTexture();
     m_backgroundEntities.push_back(entity);
 }
 
 void Game::addForegroundEntity(const std::shared_ptr<Entity>& entity)
 {
-    entity->cacheTexture(m_renderer->getRenderer());
+    entity->cacheTexture();
     m_foregroundEntities.push_back(entity);
 }
 
@@ -218,9 +219,9 @@ void Game::addForegroundEntity(const std::shared_ptr<Entity>& entity)
 //        if (other.get() == &entity)
 //            continue;
 //
-//        if (potentialPosition.x + entity.getSdlRect().w > Window::WINDOW_DIMENSIONS.x 
+//        if (potentialPosition.x + entity.getSdlRect().w > WindowLoader::WINDOW_DIMENSIONS.x 
 //            || potentialPosition.x < 0
-//            || potentialPosition.y + entity.getSdlRect().h > Window::WINDOW_DIMENSIONS.y
+//            || potentialPosition.y + entity.getSdlRect().h > WindowLoader::WINDOW_DIMENSIONS.y
 //            || potentialPosition.y < 0)
 //            return false;
 //

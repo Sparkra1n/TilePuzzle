@@ -1,56 +1,125 @@
-
-/**
- * @file TileMap.cpp
- */
 #include "TileMap.h"
 
-Tile::Tile(TileCode tileCode, const std::shared_ptr<Sprite>& residingEntity)
-    : Sprite(Textures::GRASS_SPRITE_PATH), m_tileCode(tileCode), m_residingEntity(residingEntity) {}
+Tile::TileCode Tile::charToTileCode(const char* c)
+{
+    int value = atoi(c);
+    if (value >= static_cast<int>(TileCode::First) && value <= static_cast<int>(TileCode::Last))
+        return static_cast<TileCode>(value);
+
+    throw std::invalid_argument("Invalid tile code value");
+}
+
+Tile::Tile(TileCode tileCode, SDL_Renderer* cacheRenderer, const std::shared_ptr<Sprite>& residingEntity, const bool isGoalTile)
+    : Sprite(Textures::GRASS_SPRITE_PATH, cacheRenderer), m_tileCode(tileCode), m_residingEntity(residingEntity), m_isGoalTile(isGoalTile)
+{
+    std::cout << cacheRenderer;
+}
 
 void Tile::setResidingEntity(const std::shared_ptr<Sprite>& residingEntity) { m_residingEntity = residingEntity; }
 std::shared_ptr<Sprite> Tile::getResidingEntity() const { return m_residingEntity; }
 
-TileMap::TileMap(int rows, int columns)
+std::vector<std::string> TileMap::splitString(const std::string& s, const char delimiter)
 {
-    for (int i = 0; i < rows; ++i)
+    std::vector<std::string> slices;
+    std::istringstream stream(s);
+    std::string token;
+
+    while (std::getline(stream, token, delimiter)) 
+        slices.push_back(token);
+
+    return slices;
+}
+
+// Improved verifyBoard with single file traversal and no repeated splitting
+bool TileMap::verifyBoard(std::ifstream& file, int& rows, int& columns)
+{
+    std::string line;
+    int lineNumber = 0;
+    //std::vector<std::vector<std::string>> allRows;
+
+    // Read file once and store all rows
+    while (std::getline(file, line)) 
     {
-        for (int j = 0; j < columns; ++j)
-        {
-            auto tile = std::make_shared<Tile>(Tile::TileCode::BareGrass);
-            Vector2 coords = { j * Window::TILE_DIMENSIONS.x, i * Window::TILE_DIMENSIONS.y };
-            tile->setPosition(coords);
-            m_tileMap[{j, i}] = tile;
+        std::vector<std::string> currentLineElements = splitString(line, '-');
+        if (lineNumber == 0) {
+            columns = static_cast<int>(currentLineElements.size());
         }
+        else if (static_cast<int>(currentLineElements.size()) != columns) {
+            std::cerr << "Inconsistent row length found on line " << lineNumber + 1 << "!\n";
+            return false;
+        }
+
+        //allRows.push_back(std::move(currentLineElements));
+        ++lineNumber;
+    }
+
+    rows = lineNumber;
+
+    if (columns > MAX_COLUMNS || rows > MAX_ROWS) {
+        std::cerr << "Board exceeds max dimensions!\n";
+        return false;
+    }
+
+    return true;
+}
+
+TileMap::TileMap(const std::string& path, SDL_Renderer* cacheRenderer) : m_cacheRenderer(cacheRenderer)
+{
+    std::ifstream boardFile(path);
+
+    if (!boardFile.is_open())
+        throw std::runtime_error("Error: Could not open the input file: " + path);
+
+    if (!verifyBoard(boardFile, m_boardRows, m_boardColumns))
+        throw std::runtime_error("Error: Invalid board file: " + path);
+
+    // Reset file to start after verification
+    boardFile.clear();
+    boardFile.seekg(0);
+
+    std::string line;
+    int rowNumber = 0;
+    while (std::getline(boardFile, line)) 
+    {
+        std::vector<std::string> row = splitString(line, '-');
+        for (int i = 0; i < m_boardColumns; ++i) 
+        {
+            auto tile = std::make_shared<Tile>(Tile::charToTileCode(row[i].c_str()), m_cacheRenderer);
+            Vector2 coords = { i * Tile::TILE_DIMENSIONS.x, rowNumber * Tile::TILE_DIMENSIONS.y };
+            tile->setPosition(coords);
+            m_tileMap[{i, rowNumber}] = tile;
+        }
+        ++rowNumber;
     }
 }
 
 Vector2<int> TileMap::getEnclosingTilePosition(const Vector2<int>& position)
 {
-    int x = position.x - (position.x % Window::TILE_DIMENSIONS.x);
-    int y = position.y - (position.y % Window::TILE_DIMENSIONS.y);
+    int x = position.x - (position.x % Tile::TILE_DIMENSIONS.x);
+    int y = position.y - (position.y % Tile::TILE_DIMENSIONS.y);
     return { x, y };
 }
 
 Vector2<int> TileMap::getEnclosingTileCenterPosition(const Vector2<int>& position, const SDL_Rect& spriteDimensions)
 {
-    int x = position.x - (position.x % Window::TILE_DIMENSIONS.x) + (Window::TILE_DIMENSIONS.x / 2) - (spriteDimensions.w / 2);
-    int y = position.y - (position.y % Window::TILE_DIMENSIONS.y) + (Window::TILE_DIMENSIONS.y / 2) - (spriteDimensions.h / 2);
+    int x = position.x - (position.x % Tile::TILE_DIMENSIONS.x) + (Tile::TILE_DIMENSIONS.x / 2) - (spriteDimensions.w / 2);
+    int y = position.y - (position.y % Tile::TILE_DIMENSIONS.y) + (Tile::TILE_DIMENSIONS.y / 2) - (spriteDimensions.h / 2);
     return { x, y };
 }
 
 std::shared_ptr<Tile> TileMap::getEnclosingTile(const Vector2<int>& position) const
 {
     auto tileCoordinates = getEnclosingTilePosition(position);
-    int xIndex = tileCoordinates.x / Window::TILE_DIMENSIONS.x;
-    int yIndex = tileCoordinates.y / Window::TILE_DIMENSIONS.y;
-    if (xIndex >= Window::BOARD_COLUMNS || yIndex >= Window::BOARD_ROWS)
+    int xIndex = tileCoordinates.x / Tile::TILE_DIMENSIONS.x;
+    int yIndex = tileCoordinates.y / Tile::TILE_DIMENSIONS.y;
+    if (xIndex >= m_boardColumns || yIndex >= m_boardRows)
         return nullptr;
     return m_tileMap.at({ xIndex, yIndex });
 }
 
 std::shared_ptr<Tile> TileMap::getTile(int x, int y) const
 {
-    if (x >= Window::BOARD_COLUMNS || y >= Window::BOARD_ROWS || x < 0 || y < 0)
+    if (x >= m_boardColumns || y >= m_boardRows || x < 0 || y < 0)
         return nullptr;
     return m_tileMap.at({ x, y });
 }
@@ -96,7 +165,7 @@ void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>
     int dX = playerTile->getPosition().x - entityTile->getPosition().x;
     int dY = playerTile->getPosition().y - entityTile->getPosition().y;
 
-    if (std::abs(dX) > Window::TILE_DIMENSIONS.x || std::abs(dY) > Window::TILE_DIMENSIONS.y)
+    if (std::abs(dX) > Tile::TILE_DIMENSIONS.x || std::abs(dY) > Tile::TILE_DIMENSIONS.y)
         return;
 
     int dirX = 0, dirY = 0;
@@ -109,8 +178,8 @@ void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>
         dirY = (dY > 0) ? -1 : 1;
     }
 
-    int currentX = entityTile->getPosition().x / Window::TILE_DIMENSIONS.x;
-    int currentY = entityTile->getPosition().y / Window::TILE_DIMENSIONS.y;
+    int currentX = entityTile->getPosition().x / Tile::TILE_DIMENSIONS.x;
+    int currentY = entityTile->getPosition().y / Tile::TILE_DIMENSIONS.y;
 
     std::shared_ptr<Tile> targetTile = nullptr;
     while (true)
@@ -118,7 +187,7 @@ void TileMap::pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>
         int nextX = currentX + dirX;
         int nextY = currentY + dirY;
 
-        if (nextX < 0 || nextX >= Window::BOARD_COLUMNS || nextY < 0 || nextY >= Window::BOARD_ROWS)
+        if (nextX < 0 || nextX >= m_boardColumns || nextY < 0 || nextY >= m_boardRows)
             break;
 
         std::shared_ptr<Tile> nextTile = m_tileMap.at({ nextX, nextY });
@@ -150,8 +219,8 @@ std::shared_ptr<Tile> TileMap::getClosestAvailableAdjacentTile(const Vector2<int
     };
 
     Vector2<int> coordinates = getEnclosingTilePosition(tilePosition);
-    int tileX = coordinates.x / Window::TILE_DIMENSIONS.x;
-    int tileY = coordinates.y / Window::TILE_DIMENSIONS.y;
+    int tileX = coordinates.x / Tile::TILE_DIMENSIONS.x;
+    int tileY = coordinates.y / Tile::TILE_DIMENSIONS.y;
 
     std::shared_ptr<Tile> closestTile = nullptr;
     double minDistance = std::numeric_limits<double>::max();
@@ -161,14 +230,14 @@ std::shared_ptr<Tile> TileMap::getClosestAvailableAdjacentTile(const Vector2<int
         int newX = tileX + dir.x;
         int newY = tileY + dir.y;
 
-        if (newX >= 0 && newX < Window::BOARD_COLUMNS && newY >= 0 && newY < Window::BOARD_ROWS)
+        if (newX >= 0 && newX < m_boardColumns && newY >= 0 && newY < m_boardRows)
         {
             std::shared_ptr<Tile> adjacentTile = m_tileMap.at({ newX, newY });
 
             if (adjacentTile->getResidingEntity() == nullptr)
             {
-                double distance = std::sqrt(std::pow(newX * Window::TILE_DIMENSIONS.x - playerCoordinates.x, 2) +
-                    std::pow(newY * Window::TILE_DIMENSIONS.y - playerCoordinates.y, 2));
+                double distance = std::sqrt(std::pow(newX * Tile::TILE_DIMENSIONS.x - playerCoordinates.x, 2) +
+                    std::pow(newY * Tile::TILE_DIMENSIONS.y - playerCoordinates.y, 2));
 
                 if (distance < minDistance)
                 {
@@ -201,10 +270,10 @@ void TileMap::print()
     }
 }
 
-std::vector<std::shared_ptr<Tile>> TileMap::reconstructPath(const std::shared_ptr<AStarNode>& node)
+std::vector<std::shared_ptr<Tile>> TileMap::reversePath(const std::shared_ptr<AStarNode>& node)
 {
     std::vector<std::shared_ptr<Tile>> path;
-    auto current = node;
+    std::shared_ptr<TileMap::AStarNode> current = node;
     while (current)
     {
         path.push_back(current->getTile());
@@ -246,9 +315,9 @@ std::vector<std::shared_ptr<Tile>> TileMap::getPathToTile(const std::shared_ptr<
         return {};
 
     auto compare = [](const std::shared_ptr<AStarNode>& a, const std::shared_ptr<AStarNode>& b) -> bool
-        {
-            return *a > *b;
-        };
+    {
+        return *a > *b;
+    };
 
     std::priority_queue<std::shared_ptr<AStarNode>, std::vector<std::shared_ptr<AStarNode>>, decltype(compare)> openList(compare);
     std::unordered_map<std::shared_ptr<Tile>, std::shared_ptr<AStarNode>> allNodes;
@@ -265,28 +334,40 @@ std::vector<std::shared_ptr<Tile>> TileMap::getPathToTile(const std::shared_ptr<
 
     while (!openList.empty())
     {
-        auto current = openList.top();
+	    std::shared_ptr<AStarNode> current = openList.top();
         openList.pop();
         closedList.insert(current->getTile());
 
         if (current->getTile() == goalTile)
-            return reconstructPath(current);
+            return reversePath(current);
 
-        auto neighbors = getNeighborTiles(current->getTile());
+        std::vector<std::shared_ptr<Tile>> neighbors = getNeighborTiles(current->getTile());
         for (const auto& neighbor : neighbors)
         {
             if (closedList.count(neighbor) || neighbor->getResidingEntity() != nullptr)
                 continue;
 
-            double tentativeG = current->getGValue() + 1.0; // Assuming uniform cost for simplicity
+            double tentativeG = current->getGValue() + 1.0;
             double hCost = heuristic(getTileCoordinates(neighbor), getTileCoordinates(goalTile));
             auto neighborNode = std::make_shared<AStarNode>(neighbor, current, tentativeG, hCost);
 
-            if (allNodes.find(neighbor) == allNodes.end() || tentativeG < allNodes[neighbor]->getGValue()) {
+            if (allNodes.find(neighbor) == allNodes.end() || tentativeG < allNodes[neighbor]->getGValue()) 
+            {
                 openList.push(neighborNode);
                 allNodes[neighbor] = neighborNode;
             }
         }
     }
     return {};
+}
+
+bool TileMap::isSolved()
+{
+	for (auto& [_, tile] : m_tileMap)
+	{
+        if (tile->isGoalTile())
+            if (tile->getResidingEntity() == nullptr)
+                return false;
+	}
+    return true;
 }

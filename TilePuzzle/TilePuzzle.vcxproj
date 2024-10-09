@@ -154,10 +154,10 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="WindowLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Counter.h" />
-    <ClInclude Include="EntityStateTracker.h" />
     <ClInclude Include="Events.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Observer.h" />
@@ -166,9 +166,13 @@
     <ClInclude Include="SDLExceptions.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="Textures.h" />
+    <ClInclude Include="TextureSource.h" />
     <ClInclude Include="TileMap.h" />
     <ClInclude Include="Vector2.h" />
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="WindowLoader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="start.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

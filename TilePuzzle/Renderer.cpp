@@ -38,12 +38,6 @@ void Renderer::render(const std::shared_ptr<Entity>& entity) const
     if (!entity->getRenderFlag())
         return;
 
-    if (entity->getCacheFlag())
-    {
-        entity->cacheTexture(m_renderer.get());
-        entity->clearCacheFlag();
-    }
-
     SDL_Rect entityRect = entity->getSdlRect();
     SDL_RenderCopy(m_renderer.get(), entity->getCachedTexture(), nullptr, &entityRect);
 }

@@ -22,14 +22,14 @@ public:
     SDL_Renderer* getRenderer() const { return m_renderer.get(); }
 
     template<typename... Args>
-    void renderMultiple(std::vector<std::shared_ptr<Entity>>& first, Args&&... args) const
+    void renderInLayers(std::vector<std::shared_ptr<Entity>>& first, Args&&... args) const
     {
         std::thread t(&Renderer::renderAll, this, std::cref(first));
         t.join();
-        renderMultiple(std::forward<Args>(args)...);
+        renderInLayers(std::forward<Args>(args)...);
     }
 
-    void renderMultiple() const { SDL_RenderPresent(m_renderer.get());}
+    void renderInLayers() const { SDL_RenderPresent(m_renderer.get());}
 
     void clear() const { SDL_RenderClear(m_renderer.get()); }
 private:

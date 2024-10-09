@@ -11,8 +11,32 @@
 #include <cmath>
 #include <iomanip>
 
-Sprite::Sprite(const char* path, const Observer* observer)
-    : m_renderFlag(true), m_observer(observer)
+inline bool operator==(const SDL_Color first, const SDL_Color second) noexcept
+{
+    return first.r == second.r &&
+        first.g == second.g &&
+        first.b == second.b &&
+        first.a == second.a;
+}
+
+inline bool operator!=(const SDL_Color first, const SDL_Color second) noexcept
+{
+    return !(first == second);
+}
+
+SDL_Color SpriteModifier::toSdlColor() const
+{
+    return
+    {
+        colorClamp(r),
+        colorClamp(g),
+        colorClamp(b),
+        colorClamp(a)
+    };
+}
+
+Sprite::Sprite(const char* path, SDL_Renderer* cacheRenderer, const Observer* observer)
+    : m_renderFlag(true), m_observer(observer), m_cacheRenderer(cacheRenderer)
 {
     m_surfaceOriginal = loadSurface(path);
     m_surface = loadSurface(path);
@@ -20,11 +44,12 @@ Sprite::Sprite(const char* path, const Observer* observer)
     m_rect.h = m_surface->h;
 }
 
-Sprite::Sprite(const SDL_Rect rect, const SDL_Color color, const Observer* observer)
+Sprite::Sprite(const SDL_Rect rect, const SDL_Color color, SDL_Renderer* cacheRenderer, const Observer* observer)
         : m_renderFlag(true),
           m_rect(rect),
           m_coordinates(rect.x, rect.y),
-          m_observer(observer)
+          m_observer(observer),
+          m_cacheRenderer(cacheRenderer)
 {
     SDL_Surface* surface = SDL_CreateRGBSurface(0, rect.w, rect.h, 32, 0, 0, 0, 0);
     if (!surface)
@@ -37,11 +62,10 @@ Sprite::Sprite(const SDL_Rect rect, const SDL_Color color, const Observer* obser
 
 Sprite::Sprite(const Sprite& other)
     : m_renderFlag(other.m_renderFlag),
-      m_cacheFlag(other.m_cacheFlag),
-      m_rgbaOffset(other.m_rgbaOffset),
       m_rect(other.m_rect),
       m_coordinates(other.m_coordinates),
-      m_observer(other.m_observer)
+      m_observer(other.m_observer),
+      m_cacheRenderer(other.m_cacheRenderer)
 {
     m_surfaceOriginal = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
     m_surface = SDL_ConvertSurface(other.m_surface, other.m_surface->format, 0);
@@ -74,6 +98,8 @@ void Sprite::setYCoordinate(const double value)
     m_rect.y = static_cast<int>(value);
 }
 
+// Old cache function
+#if 0
 void Sprite::cacheTexture(SDL_Renderer* renderer)
 {
     if (m_texture != nullptr)
@@ -81,6 +107,7 @@ void Sprite::cacheTexture(SDL_Renderer* renderer)
 
     m_texture = SDL_CreateTextureFromSurface(renderer, m_surface);
 }
+#endif
 
 uint8_t Sprite::getPixelAlpha(const int x, const int y) const
 {
@@ -146,12 +173,11 @@ void Sprite::resetSurface()
 {
     SDL_FreeSurface(m_surface);
     m_surface = SDL_DuplicateSurface(const_cast<SDL_Surface*>(m_surfaceOriginal));
-    setCacheFlag();
 }
 
-void Sprite::setRgbaOffset(const SDL_Color offset)
+void Sprite::applyModifier(SpriteModifier modifier)
 {
-    const Color deltaColor = Color(offset) - m_rgbaOffset;
+    //const SpriteModifier deltaColor = SpriteModifier(offset) - m_rgbaOffset;
     // Lock surface to access pixel data
     if (SDL_LockSurface(m_surface) != 0)
         return;
@@ -171,10 +197,10 @@ void Sprite::setRgbaOffset(const SDL_Color offset)
             SDL_GetRGBA(pixel, m_surface->format, &r, &g, &b, &a);
 
             // Apply offset and colorClamp operation to each color component
-            r = Color::colorClamp(r + deltaColor.r);
-            g = Color::colorClamp(g + deltaColor.g);
-            b = Color::colorClamp(b + deltaColor.b);
-            a = Color::colorClamp(a + deltaColor.a);
+            r = SpriteModifier::colorClamp(r + modifier.r);
+            g = SpriteModifier::colorClamp(g + modifier.g);
+            b = SpriteModifier::colorClamp(b + modifier.b);
+            a = SpriteModifier::colorClamp(a + modifier.a);
 
             // Update pixel
             pixels[y * width + x] = SDL_MapRGBA(m_surface->format, r, g, b, a);
@@ -183,8 +209,6 @@ void Sprite::setRgbaOffset(const SDL_Color offset)
 
     // Unlock surface
     SDL_UnlockSurface(m_surface);
-    m_rgbaOffset = Color(offset);
-    setCacheFlag();
 }
 
 bool Sprite::hasCollisionWith(const Entity& other, 
@@ -213,7 +237,6 @@ bool Sprite::hasCollisionWith(const Entity& other,
         if (!hasCollisionWith(other, potentialPosition, CollisionDetectionMethod::RectangularCollision))
             return false;
 
-        //printf("moving on\n");
 
         const auto selfSlices = slice(2);
         const auto otherSlices = other.slice(2);
@@ -311,28 +334,28 @@ void Sprite::printSlices()
         std::cout << "SDL_Rect { x: " << x << ", y: " << y << ", w: " << w << ", h: " << h << " }\n";
 }
 
-// Test function
-std::vector<std::shared_ptr<Sprite>> Sprite::processSlices() const
-{
-    std::vector<std::shared_ptr<Sprite>> rects;
-    const auto slices = slice(10);
-    rects.reserve(slices.size());
-    for (const auto& slice : slices)
-        rects.emplace_back(std::make_shared<Sprite>(slice, generateRandomColor()));
-    return rects;
-}
+//// Test function
+//std::vector<std::shared_ptr<Sprite>> Sprite::processSlices() const
+//{
+//    std::vector<std::shared_ptr<Sprite>> rects;
+//    const auto slices = slice(10);
+//    rects.reserve(slices.size());
+//    for (const auto& slice : slices)
+//        rects.emplace_back(std::make_shared<Sprite>(slice, generateRandomColor()));
+//    return rects;
+//}
 
 void Sprite::onFocus()
 {
-    setRgbaOffset({ 30, 30, 30, 0 });
+    pushModifier({"Cursor", 30, 30, 30, 0 });
 }
 
 void Sprite::onBlur()
 {
-    setRgbaOffset({ 0,0,0,0 });
+    popModifier();
 }
 
-void ExtendedSprite::update(const double deltaTime)
+void GameObject::update(const double deltaTime)
 {
     if (!m_checkpoints.empty())
     {
@@ -365,4 +388,70 @@ void ExtendedSprite::update(const double deltaTime)
     }
 }
 
+void Sprite::pushModifier(const SpriteModifier& modifier)
+{
+    m_modifierStack.push_back(modifier);  // Add the modifier to the back
+    applyModifiers();                     // Apply all modifiers in order
+}
+
+void Sprite::removeModifier(const std::string& name)
+{
+    for (int i = 0; i != m_modifierStack.size(); ++i)
+    {
+        if (m_modifierStack[i].name == name)
+        {
+            m_modifierStack.erase(std::next(m_modifierStack.begin(), i));
+            m_cachedTextures.erase(std::next(m_cachedTextures.begin(), i));
+            break;
+        }
+    }
+    applyModifiers();
+}
+
+SpriteModifier Sprite::popModifier()
+{
+    if (!m_modifierStack.empty()) 
+    {
+        SpriteModifier topModifier = m_modifierStack.back();
+        m_modifierStack.pop_back();
+        if (m_cachedTextures.size() > 1)
+        {
+            // Destroy the last cached texture
+            SDL_DestroyTexture(m_cachedTextures.back());
+            m_cachedTextures.pop_back();
+        }
+        // Apply remaining modifiers in order
+        applyModifiers();
+        return topModifier;
+    }
+
+    return {};
+}
+
+void Sprite::applyModifiers()
+{
+    // Start clean
+     resetSurface();
+
+    // Apply modifiers from front (bottom) to back (top)
+     for (const auto& modifier : m_modifierStack)
+         applyModifier(modifier);
+
+    // Cache the modified texture for efficient rendering
+    cacheTexture();
+}
+
+// Create a cached texture after applying all modifiers
+void Sprite::cacheTexture()
+{
+    if (m_texture != nullptr)
+        SDL_DestroyTexture(m_texture);
+
+    m_texture = SDL_CreateTextureFromSurface(m_cacheRenderer, m_surface);
+    if (!m_texture)
+        throw SDLImageLoadException(SDL_GetError());
+
+    // Cache this texture for future use
+    m_cachedTextures.push_back(m_texture);
+}
 

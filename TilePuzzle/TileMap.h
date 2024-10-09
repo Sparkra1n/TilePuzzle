@@ -1,45 +1,56 @@
-/**
- * @file TileMap.h
- */
 #pragma once
-
 #include "Sprite.h"
 #include "Textures.h"
-#include "Window.h"
 #include "Vector2.h"
 #include <cmath>
-#include <memory>
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
 #include <limits>
 #include <queue>
 #include <unordered_set>
+#include <sstream>
+#include <fstream>
+#include <vector>
 
 class Tile : public Sprite
 {
 public:
+    static constexpr Vector2<int> TILE_DIMENSIONS = { 86, 64 };
+
     enum class TileCode
     {
-        BareGrass = 0,
-        ShortGrass,
-        TallGrass
+        First = 0,
+        Empty = First,
+        Grass,
+        Stone,
+        Water,
+        Last = Water  // Last is always set to the final element
     };
 
-    Tile(TileCode tileCode, const std::shared_ptr<Sprite>& residingEntity = nullptr);
+    struct TileCodeTraits
+    {
+        static constexpr auto first = TileCode::First;
+        static constexpr auto last = TileCode::Last;
+    };
 
+    Tile(TileCode tileCode, SDL_Renderer* cacheRenderer, const std::shared_ptr<Sprite>& residingEntity = nullptr, bool isGoalTile = false);
+
+    void setAsGoalTile() { m_isGoalTile = true; }
     void setResidingEntity(const std::shared_ptr<Sprite>& residingEntity);
+    [[nodiscard]] bool isGoalTile() const { return m_isGoalTile; }
     [[nodiscard]] std::shared_ptr<Sprite> getResidingEntity() const;
-
+    static TileCode charToTileCode(const char* c);
 private:
     TileCode m_tileCode;
     std::shared_ptr<Sprite> m_residingEntity;
+    bool m_isGoalTile;
 };
 
 class TileMap : public Observer
 {
 public:
-    TileMap(int rows, int columns);
+    TileMap(const std::string& path, SDL_Renderer* cacheRenderer);
 
     void print();
     void placeTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>& position);
@@ -52,10 +63,18 @@ public:
     [[nodiscard]] Vector2<int> getTileCoordinates(const std::shared_ptr<Tile>& tile) const;
     [[nodiscard]] std::shared_ptr<Tile> getClosestAvailableAdjacentTile(const Vector2<int>& tilePosition, const Vector2<int>& playerCoordinates) const;
     [[nodiscard]] std::vector<std::shared_ptr<Tile>> getPathToTile(const std::shared_ptr<Tile>& startTile, const std::shared_ptr<Tile>& goalTile) const;
+    [[nodiscard]] bool isSolved();
+
+    static constexpr int MAX_ROWS = 5;
+    static constexpr int MAX_COLUMNS = 7;
 
 private:
+    SDL_Renderer* m_cacheRenderer;
+    int m_boardRows;
+    int m_boardColumns;
     std::unordered_map<Vector2<int>, std::shared_ptr<Tile>> m_tileMap;
-
+    static std::vector<std::string> splitString(const std::string& s, char delimiter);
+    static bool verifyBoard(std::ifstream& file, int& rows, int& columns);
     struct AStarNode
     {
         AStarNode(std::shared_ptr<Tile> tile, std::shared_ptr<AStarNode> parent, double gCost, double hCost)
@@ -78,7 +97,7 @@ private:
         double m_hValue;
     };
 
-    static std::vector<std::shared_ptr<Tile>> reconstructPath(const std::shared_ptr<AStarNode>& node);
+    static std::vector<std::shared_ptr<Tile>> reversePath(const std::shared_ptr<AStarNode>& node);
     static double heuristic(const Vector2<int>& a, const Vector2<int>& b);
     [[nodiscard]] std::vector<std::shared_ptr<Tile>> getNeighborTiles(const std::shared_ptr<Tile>& tile) const;
 };
