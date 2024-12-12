@@ -17,7 +17,7 @@ private:
     std::string m_errorMessage;
 };
 
-class SDLInitializationException final : public SDLException
+class SDLInitException final : public SDLException
 {
 public:
     using SDLException::SDLException;

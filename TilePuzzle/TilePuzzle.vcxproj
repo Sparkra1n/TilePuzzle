@@ -152,27 +152,24 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="Sprite.cpp" />
-    <ClCompile Include="TileMap.cpp" />
+    <ClCompile Include="GameBoard.cpp" />
     <ClCompile Include="WindowLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Counter.h" />
-    <ClInclude Include="Events.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameState.h" />
     <ClInclude Include="Observer.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="SDLExceptions.h" />
-    <ClInclude Include="Sprite.h" />
-    <ClInclude Include="Textures.h" />
-    <ClInclude Include="TextureSource.h" />
-    <ClInclude Include="TileMap.h" />
+    <ClInclude Include="GameBoard.h" />
+    <ClInclude Include="Factory.h" />
     <ClInclude Include="Vector2.h" />
     <ClInclude Include="WindowLoader.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="start.txt" />
+    <None Include="start.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

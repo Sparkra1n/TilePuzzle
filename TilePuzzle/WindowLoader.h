@@ -5,8 +5,7 @@
 #include "Game.h"
 #include "Vector2.h"
 #include <memory>
-#include "Sprite.h"
-#include "Textures.h"
+#include "GameBoard.h"
 #include "Vector2.h"
 #include <cmath>
 #include <fstream>

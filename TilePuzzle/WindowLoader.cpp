@@ -30,7 +30,7 @@ std::shared_ptr<SDL_Window> WindowLoader::createWindow(const std::string& title)
     );
 
     if (window == nullptr)
-        throw SDLInitializationException(SDL_GetError());
+        throw SDLInitException(SDL_GetError());
 
     return { window, SDL_DestroyWindow };
 }

@@ -1,8 +1,5 @@
 ﻿#include "Renderer.h"
-
-#include <array>
-
-#include "TileMap.h"
+#include "GameBoard.h"
 
 Renderer::Renderer(
     SDL_Window* window,

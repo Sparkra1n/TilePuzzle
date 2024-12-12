@@ -5,8 +5,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
-#include "Sprite.h"
-#include "TileMap.h"
+#include "GameBoard.h"
 
 struct RendererDeleter
 {
