@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iomanip>
 #include "Factory.h"
+#include "Player.h"
+#include <iostream>
 
 inline bool operator==(const SDL_Color first, const SDL_Color second) noexcept
 {
@@ -334,18 +336,18 @@ void GameObject::update(const GameState& state)
         Vector2<double> target = m_checkpoints.front();
 
         // Move horizontally if x coordinates are different
-        if (std::abs(target.x - getPosition().x) > 1)
+        if (std::abs(target.x - getWindowCoordinates().x) > 1)
         {
-            Vector2<double> coordinates = getPosition();
+            Vector2<double> coordinates = getWindowCoordinates();
             const int sign = coordinates.x < target.x ? 1 : -1;
             coordinates.x += m_speed * state.deltaTime * sign;
             setCoordinates(coordinates);
         }
 
         // Move vertically if y coordinates are different
-        else if (std::abs(target.y - getPosition().y) > 1) 
+        else if (std::abs(target.y - getWindowCoordinates().y) > 1) 
         {
-            Vector2<double> coordinates = getPosition();
+            Vector2<double> coordinates = getWindowCoordinates();
             const int sign = coordinates.y < target.y ? 1 : -1;
             coordinates.y += m_speed * state.deltaTime * sign;
             setCoordinates(coordinates);
@@ -436,9 +438,59 @@ Tile::Tile(const std::string& texturePath,
     m_isGoalTile(isGoalTile)
 {}
 
+void GameBoard::onClick(const GameState& state)
+{
+    if (state.mousePosition.x > m_boardBounds.x || state.mousePosition.y > m_boardBounds.y)
+        return;
+
+    std::cout << "click\n";
+    const Vector2<int> destination = centerScreenCoordinates(state.mousePosition, m_player->getSdlRect());
+    std::shared_ptr<Tile> tile = getEnclosingTile(destination);
+
+    // Unoccupied destination tile
+    if (tile->getResidingEntity() == nullptr)
+    {
+        std::vector<std::shared_ptr<Tile>> tiles = getPathToTile(getEnclosingTile(m_player->getWindowCoordinates()), tile);
+        std::vector<Vector2<int>> path;
+        path.reserve(tiles.size());
+        for (const auto& i : tiles)
+            path.push_back(centerScreenCoordinates(
+                i->getWindowCoordinates(),
+                m_player->getSdlRect())
+            );
+        m_player->walk(path);
+    }
+    
+    //FIXME: Go to a neighboring tile and push the slab
+    else
+    {
+        std::shared_ptr<Tile> nextTileChoice = getClosestAvailableTile(state.mousePosition, m_player->getWindowCoordinates());
+        if (nextTileChoice)
+        {
+            std::vector<std::shared_ptr<Tile>> tiles = getPathToTile(getEnclosingTile(m_player->getWindowCoordinates()), tile);
+            std::vector<Vector2<int>> path;
+            path.reserve(tiles.size());
+            for (const auto& i : tiles)
+                path.push_back(centerScreenCoordinates(i->getWindowCoordinates(), m_player->getSdlRect()));
+
+            m_player->walk(path);
+            pushTile(getEnclosingTile(destination)->getResidingEntity(), m_player->getWindowCoordinates());
+        }
+    }
+    //m_hoverTracker.getFocused()->onClick();
+}
+
 void GameBoard::update(const GameState& state)
 {
-    std::shared_ptr<Tile> hoveredTile = getEnclosingTile(state.mousePosition);
+    Vector2<int> mousePosition = state.mousePosition;
+
+    if (mousePosition.x > m_boardBounds.x)
+        mousePosition.x = m_boardBounds.x;
+
+    if (mousePosition.y > m_boardBounds.y)
+        mousePosition.y = m_boardBounds.y;
+
+    std::shared_ptr<Tile> hoveredTile = getEnclosingTile(mousePosition);
     std::shared_ptr<Entity> residingEntity = hoveredTile->getResidingEntity();
     if (residingEntity)
     {
@@ -458,6 +510,8 @@ void GameBoard::update(const GameState& state)
             m_hoveredEntity->onBlur();
         m_hoveredEntity = hoveredTile;
     }
+
+    m_player->update(state);
 }
 
 void Tile::setResidingEntity(const std::shared_ptr<Sprite>& residingEntity)
@@ -470,21 +524,24 @@ std::shared_ptr<Sprite> Tile::getResidingEntity() const
     return m_residingEntity;
 }
 
-GameBoard::GameBoard(const std::string& path, SDL_Renderer* cacheRenderer)
-    : m_cacheRenderer(cacheRenderer)
+GameBoard::GameBoard(const std::string& path, const std::shared_ptr<Player>& player, SDL_Renderer* cacheRenderer)
+    : m_cacheRenderer(cacheRenderer), m_player(player)
 {
+    if (!m_player)
+        throw std::runtime_error("Player must be initialized");
+
     readDimensions(path);
 
     // Determine offsets for matrices in the file
     int offset = 1; // First line is dimensions
-    auto tileKeys = loadMatrix(path, offset, m_boardRows, m_boardColumns);
+    std::vector<std::vector<std::string>> tileKeys = loadMatrix(path, offset, m_boardRows, m_boardColumns);
     offset += m_boardRows;
-    auto immovableKeys = loadMatrix(path, offset, m_boardRows, m_boardColumns);
+    std::vector<std::vector<std::string>> immovableKeys = loadMatrix(path, offset, m_boardRows, m_boardColumns);
     offset += m_boardRows;
-    auto movableKeys = loadMatrix(path, offset, m_boardRows, m_boardColumns);
+    std::vector<std::vector<std::string>> movableKeys = loadMatrix(path, offset, m_boardRows, m_boardColumns);
 
     // Lay tiles on the board
-    for (int i = 0; i < tileKeys.size(); ++i) 
+    for (int i = 0; i < tileKeys.size(); ++i)
     {
         std::vector<std::shared_ptr<Tile>> convertedRow;
         for (int j = 0; j < tileKeys[i].size(); ++j) 
@@ -561,7 +618,12 @@ void GameBoard::readDimensions(const std::string& path)
     if (m_boardRows <= 0 || m_boardColumns <= 0 || m_boardRows > MAX_ROWS || m_boardColumns > MAX_COLUMNS)
         throw std::runtime_error("Invalid board dimensions in file: " + path);
 
-    m_boardBoundaries = { m_boardRows * Tile::TILE_DIMENSIONS.y, m_boardColumns * Tile::TILE_DIMENSIONS.x };
+    m_boardBounds = 
+    {
+        (m_boardRows) * Tile::TILE_DIMENSIONS.x - 5,
+        (m_boardColumns) * Tile::TILE_DIMENSIONS.y - 5
+    };
+    std::cout << m_boardBounds << "\n";
 }
 
 std::vector<std::vector<std::string>> GameBoard::loadMatrix(const std::string& path, int offset, int expectedRows, int expectedColumns)
@@ -572,14 +634,16 @@ std::vector<std::vector<std::string>> GameBoard::loadMatrix(const std::string& p
 
     // Skip lines up to the matrix start
     std::string line;
-    for (int i = 0; i < offset; ++i) {
+    for (int i = 0; i < offset; ++i) 
+    {
         if (!std::getline(file, line))
             throw std::runtime_error("Unexpected end of file before matrix data");
     }
 
     // Read the matrix
     std::vector<std::vector<std::string>> matrix;
-    for (int i = 0; i < expectedRows; ++i) {
+    for (int i = 0; i < expectedRows; ++i)
+    {
         if (!std::getline(file, line))
             throw std::runtime_error("Unexpected end of file in matrix data");
 
@@ -589,13 +653,11 @@ std::vector<std::vector<std::string>> GameBoard::loadMatrix(const std::string& p
         std::stringstream ss(line);
         std::string cell;
 
-        while (std::getline(ss, cell, ',')) {
+        while (std::getline(ss, cell, ','))
             rowElements.push_back(cell);
-        }
 
-        if (static_cast<int>(rowElements.size()) != expectedColumns) {
+        if (static_cast<int>(rowElements.size()) != expectedColumns)
             throw std::runtime_error("Row size mismatch in matrix data");
-        }
 
         matrix.push_back(rowElements);
     }
@@ -603,23 +665,28 @@ std::vector<std::vector<std::string>> GameBoard::loadMatrix(const std::string& p
     return matrix;
 }
 
-Vector2<int> GameBoard::positionToTileLeftCorner(const Vector2<int>& position)
+Vector2<int> GameBoard::snapScreenCoordinates(Vector2<int> coordinates)
 {
-    int x = position.x - (position.x % Tile::TILE_DIMENSIONS.x);
-    int y = position.y - (position.y % Tile::TILE_DIMENSIONS.y);
+    int x = coordinates.x - (coordinates.x % Tile::TILE_DIMENSIONS.x);
+    int y = coordinates.y - (coordinates.y % Tile::TILE_DIMENSIONS.y);
     return { x, y };
 }
 
-Vector2<int> GameBoard::positionToTileCenter(const Vector2<int>&position, const SDL_Rect & spriteDimensions)
+Vector2<int> GameBoard::centerScreenCoordinates(Vector2<int> coordinates, const SDL_Rect& spriteDimensions)
 {
-    int x = position.x - (position.x % Tile::TILE_DIMENSIONS.x) + (Tile::TILE_DIMENSIONS.x / 2) - (spriteDimensions.w / 2);
-    int y = position.y - (position.y % Tile::TILE_DIMENSIONS.y) + (Tile::TILE_DIMENSIONS.y / 2) - (spriteDimensions.h / 2);
+    int x = coordinates.x - (coordinates.x % Tile::TILE_DIMENSIONS.x) + (Tile::TILE_DIMENSIONS.x / 2) - (spriteDimensions.w / 2);
+    int y = coordinates.y - (coordinates.y % Tile::TILE_DIMENSIONS.y) + (Tile::TILE_DIMENSIONS.y / 2) - (spriteDimensions.h / 2);
     return { x, y };
+}
+
+Vector2<int> GameBoard::getGameBoardCoordinates(Vector2<int> coordinates) const
+{
+    return { coordinates.x / Tile::TILE_DIMENSIONS.x, coordinates.y / Tile::TILE_DIMENSIONS.y };
 }
 
 std::shared_ptr<Tile> GameBoard::getEnclosingTile(const Vector2<int>& position) const
 {
-    Vector2<int> tileCoordinates = positionToTileLeftCorner(position);
+    Vector2<int> tileCoordinates = snapScreenCoordinates(position);
     int xIndex = tileCoordinates.x / Tile::TILE_DIMENSIONS.x;
     int yIndex = tileCoordinates.y / Tile::TILE_DIMENSIONS.y;
     if (xIndex >= m_boardColumns || yIndex >= m_boardRows)
@@ -652,13 +719,13 @@ std::vector<std::shared_ptr<Tile>> GameBoard::getTiles() const
 void GameBoard::pushTile(const std::shared_ptr<Sprite>&entity, const Vector2<int>&playerPosition) const
 {
     std::shared_ptr<Tile> playerTile = getEnclosingTile(playerPosition);
-    std::shared_ptr<Tile> entityTile = getEnclosingTile(entity->getPosition());
+    std::shared_ptr<Tile> entityTile = getEnclosingTile(entity->getWindowCoordinates());
 
     if (!playerTile || !entityTile)
         return;
 
-    int dX = playerTile->getPosition().x - entityTile->getPosition().x;
-    int dY = playerTile->getPosition().y - entityTile->getPosition().y;
+    int dX = playerTile->getWindowCoordinates().x - entityTile->getWindowCoordinates().x;
+    int dY = playerTile->getWindowCoordinates().y - entityTile->getWindowCoordinates().y;
 
     if (std::abs(dX) > Tile::TILE_DIMENSIONS.x || std::abs(dY) > Tile::TILE_DIMENSIONS.y)
         return;
@@ -669,8 +736,8 @@ void GameBoard::pushTile(const std::shared_ptr<Sprite>&entity, const Vector2<int
     else
         dirY = (dY > 0) ? -1 : 1;
 
-    int currentX = entityTile->getPosition().x / Tile::TILE_DIMENSIONS.x;
-    int currentY = entityTile->getPosition().y / Tile::TILE_DIMENSIONS.y;
+    int currentX = entityTile->getWindowCoordinates().x / Tile::TILE_DIMENSIONS.x;
+    int currentY = entityTile->getWindowCoordinates().y / Tile::TILE_DIMENSIONS.y;
 
     std::shared_ptr<Tile> targetTile = nullptr;
     while (true)
@@ -694,7 +761,7 @@ void GameBoard::pushTile(const std::shared_ptr<Sprite>&entity, const Vector2<int
     {
         entityTile->setResidingEntity(nullptr);
         targetTile->setResidingEntity(entity);
-        Vector2 destination = positionToTileCenter(targetTile->getPosition(), entity->getSdlRect());
+        Vector2 destination = centerScreenCoordinates(targetTile->getWindowCoordinates(), entity->getSdlRect());
         entity->walk({ destination });
     }
 }
@@ -709,7 +776,7 @@ std::shared_ptr<Tile> GameBoard::getClosestAvailableTile(const Vector2<int>&tile
         { 0, 1 }
     };
 
-    Vector2<int> coordinates = positionToTileLeftCorner(tilePosition);
+    Vector2<int> coordinates = snapScreenCoordinates(tilePosition);
     int tileX = coordinates.x / Tile::TILE_DIMENSIONS.x;
     int tileY = coordinates.y / Tile::TILE_DIMENSIONS.y;
 
@@ -742,15 +809,10 @@ std::shared_ptr<Tile> GameBoard::getClosestAvailableTile(const Vector2<int>&tile
     return closestTile;
 }
 
-Vector2<int> GameBoard::getTileCoordinates(const std::shared_ptr<Tile>&tile) const
-{
-    return tile->getPosition();
-}
-
 std::vector<std::shared_ptr<Tile>> GameBoard::reversePath(const std::shared_ptr<AStarNode>&node)
 {
     std::vector<std::shared_ptr<Tile>> path;
-    std::shared_ptr<GameBoard::AStarNode> current = node;
+    std::shared_ptr<AStarNode> current = node;
     while (current)
     {
         path.push_back(current->getTile());
@@ -765,36 +827,38 @@ double GameBoard::heuristic(const Vector2<int>&a, const Vector2<int>&b)
     return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
-std::vector<std::shared_ptr<Tile>> GameBoard::getNeighborTiles(const std::shared_ptr<Tile>&tile) const
+std::vector<std::shared_ptr<Tile>> GameBoard::getNeighborTiles(const std::shared_ptr<Tile>& tile) const
 {
-    static const std::vector<Vector2<int>> directions =
+    static const std::vector directions = 
     {
-        { 0, -1 },
-        { -1, 0 },
-        { 1, 0 },
-        { 0, 1 }
+        Vector2{ 0, -1 }, Vector2{ -1, 0 },
+        Vector2{ 1, 0  }, Vector2{  0, 1 }
     };
 
-    const Vector2<int> position = getTileCoordinates(tile);
+    Vector2<int> position = getGameBoardCoordinates(tile->getWindowCoordinates());
+
     std::vector<std::shared_ptr<Tile>> neighbors;
-    for (const auto& dir : directions)
+    neighbors.reserve(directions.size());
+
+    for (const auto& [dx, dy] : directions)
     {
-        auto neighbor = getTile(position.x + dir.x, position.y + dir.y);
-        if (neighbor)
+        if (auto neighbor = getTile(position.x + dx, position.y + dy))
             neighbors.push_back(neighbor);
     }
+
     return neighbors;
 }
 
-std::vector<std::shared_ptr<Tile>> GameBoard::getPathToTile(const std::shared_ptr<Tile>&startTile, const std::shared_ptr<Tile>&goalTile) const
+
+std::vector<std::shared_ptr<Tile>> GameBoard::getPathToTile(const std::shared_ptr<Tile>& startTile, const std::shared_ptr<Tile>& goalTile) const
 {
     if (!startTile || !goalTile)
         return {};
 
     auto compare = [](const std::shared_ptr<AStarNode>& a, const std::shared_ptr<AStarNode>& b) -> bool
-        {
-            return *a > *b;
-        };
+    {
+        return *a > *b;
+    };
 
     std::priority_queue<std::shared_ptr<AStarNode>, std::vector<std::shared_ptr<AStarNode>>, decltype(compare)> openList(compare);
     std::unordered_map<std::shared_ptr<Tile>, std::shared_ptr<AStarNode>> allNodes;
@@ -803,7 +867,7 @@ std::vector<std::shared_ptr<Tile>> GameBoard::getPathToTile(const std::shared_pt
     auto startNode = std::make_shared<AStarNode>(startTile,
         nullptr,
         0.0,
-        heuristic(getTileCoordinates(startTile), getTileCoordinates(goalTile))
+        heuristic(startTile->getWindowCoordinates(), goalTile->getWindowCoordinates())
     );
 
     openList.push(startNode);
@@ -811,30 +875,47 @@ std::vector<std::shared_ptr<Tile>> GameBoard::getPathToTile(const std::shared_pt
 
     while (!openList.empty())
     {
-        std::shared_ptr<AStarNode> current = openList.top();
+        auto current = openList.top();
         openList.pop();
         closedList.insert(current->getTile());
 
+        //std::cout << "Current Tile: " << current->getTile()->getWindowCoordinates() << "\n";
         if (current->getTile() == goalTile)
+        {
+            //std::cout << "Goal Reached!\n";
             return reversePath(current);
+        }
 
-        std::vector<std::shared_ptr<Tile>> neighbors = getNeighborTiles(current->getTile());
+        auto neighbors = getNeighborTiles(current->getTile());
         for (const auto& neighbor : neighbors)
         {
-            if (closedList.count(neighbor) || neighbor->getResidingEntity() != nullptr)
+            if (closedList.count(neighbor))
+            {
+                //std::cout << "Skipping Closed Tile: " << neighbor->getWindowCoordinates() << "\n";
                 continue;
+            }
+            if (neighbor->getResidingEntity() != nullptr)
+            {
+                //std::cout << "Skipping Blocked Tile: " << neighbor->getWindowCoordinates() << "\n";
+                continue;
+            }
 
             double tentativeG = current->getGValue() + 1.0;
-            double hCost = heuristic(getTileCoordinates(neighbor), getTileCoordinates(goalTile));
+            double hCost = heuristic(neighbor->getWindowCoordinates(), goalTile->getWindowCoordinates());
             auto neighborNode = std::make_shared<AStarNode>(neighbor, current, tentativeG, hCost);
+
+            //std::cout << "Evaluating Neighbor: " << neighbor->getWindowCoordinates()
+                //<< " G: " << tentativeG << " H: " << hCost << " F: " << (tentativeG + hCost) << "\n";
 
             if (allNodes.find(neighbor) == allNodes.end() || tentativeG < allNodes[neighbor]->getGValue())
             {
+                //std::cout << "Pushing to Open List: " << neighbor->getWindowCoordinates() << "\n";
                 openList.push(neighborNode);
                 allNodes[neighbor] = neighborNode;
             }
         }
     }
+    //std::cout << "No Path Found!\n";
     return {};
 }
 
@@ -853,4 +934,3 @@ bool GameBoard::isSolved()
     }
     return true;
 }
-

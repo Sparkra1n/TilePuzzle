@@ -25,20 +25,24 @@ public:
     void run();
     void handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event);
     void handleRightMouseButtonClick(const SDL_MouseButtonEvent& event);
-    bool handleInputEvents();
     void update(double deltaTime);
     void addBackgroundEntity(const std::shared_ptr<Entity>& entity);
     void addForegroundEntity(const std::shared_ptr<Entity>& entity);
     void loadLevel(const std::string& path);
+
+    /**
+     * @return false - user quit
+     */
+    bool handleInputEvents();
     //bool canMoveTo(const Entity& entity, Vector2<double> potentialPosition) const override;
 
 private:
     GameState m_gameState;
     std::unique_ptr<GameBoard> m_gameBoard;
-    std::vector<std::shared_ptr<Entity>> m_backgroundEntities;   // Collection of background entities in the game
-    std::vector<std::shared_ptr<Entity>> m_foregroundEntities;   // Collection of foreground entities in the game
+    std::vector<std::shared_ptr<Entity>> m_backgroundEntities;
+    std::vector<std::shared_ptr<Entity>> m_foregroundEntities;
     std::shared_ptr<Sprite> m_mouse;
-    std::shared_ptr<Player> m_player;                            // Player sprite
+    std::shared_ptr<Player> m_player;
     SDL_Window* m_window{};                                      // SDL window instance
     SDL_Event m_windowEvent{};                                   // SDL event for window handling
     std::unique_ptr<Renderer> m_renderer;

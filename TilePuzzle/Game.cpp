@@ -19,15 +19,16 @@ Game::Game(SDL_Window* window, const std::string& levelPath) : m_window(window)
 
 void Game::loadLevel(const std::string& path)
 {
+    std::cout << "load player\n";
+    m_player = std::make_shared<Player>("./sprites/sword.bmp", m_renderer->getRenderer(), this, 10);
+    addForegroundEntity(m_player);
+
     // Load level-specific resources
-    m_gameBoard = std::make_unique<GameBoard>(path, m_renderer->getRenderer());
+    m_gameBoard = std::make_unique<GameBoard>(path, m_player, m_renderer->getRenderer());
 
     // Load general resources
     for (auto& entity : m_gameBoard->getTiles())
         addBackgroundEntity(entity);
-
-    m_player = std::make_shared<Player>("./sprites/sword.bmp", m_renderer->getRenderer(), this, 10);
-    addBackgroundEntity(m_player);
 }
 
 void Game::run()
@@ -49,7 +50,6 @@ bool Game::handleInputEvents()
 {
     while (SDL_PollEvent(&m_windowEvent) > 0)
     {
-        m_player->handleEvent(m_windowEvent);
         switch (m_windowEvent.type)
         {
         case SDL_QUIT:
@@ -57,13 +57,10 @@ bool Game::handleInputEvents()
 
         case SDL_MOUSEBUTTONDOWN:
             if (m_windowEvent.button.button == SDL_BUTTON_LEFT)
-            {
                 handleLeftMouseButtonClick(m_windowEvent.button);
-            }
+
             else if (m_windowEvent.button.button == SDL_BUTTON_RIGHT)
-            {
                 handleRightMouseButtonClick(m_windowEvent.button);
-            }
             break;
 
         default:
@@ -75,56 +72,7 @@ bool Game::handleInputEvents()
 
 void Game::handleLeftMouseButtonClick(const SDL_MouseButtonEvent& event)
 {
-    Vector2<int> mousePosition;
-    SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-
-    const Vector2<int> destination = m_gameBoard->positionToTileCenter(
-        { event.x, event.y }, 
-        m_player->getSdlRect()
-    );
-
-    std::shared_ptr<Tile> tile = m_gameBoard->getEnclosingTile(destination);
-
-    // Unoccupied destination tile
-    if (tile->getResidingEntity() == nullptr)
-    {
-        std::vector<std::shared_ptr<Tile>> tiles = m_gameBoard->getPathToTile(
-            m_gameBoard->getEnclosingTile(m_player->getPosition()),
-            tile
-        );
-
-        std::vector<Vector2<int>> path;
-        path.reserve(tiles.size());
-        for (const auto& i : tiles)
-            path.push_back(m_gameBoard->positionToTileCenter(
-                i->getPosition(), 
-                m_player->getSdlRect())
-            );
-        m_player->walk(path);
-    }
-    //FIXME: Go to a neighboring tile and push the slab
-    else
-    {
-        std::shared_ptr<Tile> nextTileChoice = m_gameBoard->getClosestAvailableTile({ event.x, event.y }, m_player->getPosition());
-        if (nextTileChoice)
-        {
-            std::vector<std::shared_ptr<Tile>> tiles = m_gameBoard->getPathToTile(
-                m_gameBoard->getEnclosingTile(m_player->getPosition()),
-                tile
-            );
-
-            std::vector<Vector2<int>> path;
-            path.reserve(tiles.size());
-            for (const auto& i : tiles)
-                path.push_back(m_gameBoard->positionToTileCenter(
-                    i->getPosition(),
-                    m_player->getSdlRect())
-                );
-            m_player->walk(path);
-            m_gameBoard->pushTile(m_gameBoard->getEnclosingTile(destination)->getResidingEntity(), m_player->getPosition());
-        }
-    }
-    //m_hoverTracker.getFocused()->onClick();
+	m_gameBoard->onClick(m_gameState);
 }
 
 void Game::handleRightMouseButtonClick(const SDL_MouseButtonEvent& event)
@@ -138,12 +86,8 @@ void Game::update(const double deltaTime)
     SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
     m_gameState.mousePosition = mousePosition;
     m_gameState.deltaTime = deltaTime;
-
+    //std::cout << mousePosition << "\r";
     m_gameBoard->update(m_gameState);
-    //for (const auto& entity : m_backgroundEntities)
-    //    entity->update(m_gameState);
-    //for (const auto& entity : m_foregroundEntities)
-    //    entity->update(m_gameState);
 
     // Check if the game has finished
     //if (m_tileMap->isSolved())

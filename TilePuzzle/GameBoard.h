@@ -21,6 +21,7 @@
 #include "GameState.h"
 
 
+class Player;
 /**
  * @brief Struct to perform offset operations on SDL_Colors
  */
@@ -77,7 +78,7 @@ public:
     virtual void clearRenderFlag() {}
     virtual void resetSurface() {}
     virtual void cacheTexture() {}
-    [[nodiscard]] virtual Vector2<double> getPosition() const { return {}; }
+    [[nodiscard]] virtual Vector2<double> getWindowCoordinates() const { return {}; }
     [[nodiscard]] virtual SDL_Rect getSdlRect() const { return SDL_Rect{}; }
     [[nodiscard]] virtual SDL_Texture* getCachedTexture() const { return nullptr; }
     [[nodiscard]] virtual std::vector<SDL_Rect> slice(int sliceThickness) const { return {}; }
@@ -127,7 +128,7 @@ public:
     [[nodiscard]] static SDL_Color generateRandomColor();
     [[nodiscard]] uint8_t getPixelAlpha(int x, int y) const;
     [[nodiscard]] SDL_Rect getSdlRect() const override;
-    [[nodiscard]] Vector2<double> getPosition() const override { return m_coordinates; }
+    [[nodiscard]] Vector2<double> getWindowCoordinates() const override { return m_coordinates; }
     [[nodiscard]] SDL_Surface* getSdlSurface() const;
     [[nodiscard]] SDL_Texture* getCachedTexture() const override;
     [[nodiscard]] std::vector<SDL_Rect> slice(int sliceThickness) const override;
@@ -222,30 +223,35 @@ protected:
 class GameBoard : public Observer
 {
 public:
-    GameBoard(const std::string& path, SDL_Renderer* cacheRenderer);
+    GameBoard(const std::string& path, const std::shared_ptr<Player>& player, SDL_Renderer* cacheRenderer);
     void update(const GameState& state);
+    void onClick(const GameState& state);
     void pushTile(const std::shared_ptr<Sprite>& entity, const Vector2<int>& playerPosition) const;
     void readDimensions(const std::string& path);
-    [[nodiscard]] static Vector2<int> positionToTileLeftCorner(const Vector2<int>& position);
-    [[nodiscard]] static Vector2<int> positionToTileCenter(const Vector2<int>& position, const SDL_Rect& spriteDimensions);
+    [[nodiscard]] static Vector2<int> snapScreenCoordinates(Vector2<int> coordinates);
+    [[nodiscard]] static Vector2<int> centerScreenCoordinates(Vector2<int> coordinates, const SDL_Rect& spriteDimensions);
+    Vector2<int> getGameBoardCoordinates(Vector2<int> coordinates) const;
     [[nodiscard]] std::shared_ptr<Tile> getEnclosingTile(const Vector2<int>& position) const;
     [[nodiscard]] std::shared_ptr<Tile> getTile(int x, int y) const;
     [[nodiscard]] std::vector<std::shared_ptr<Tile>> getTiles() const;
-    [[nodiscard]] Vector2<int> getTileCoordinates(const std::shared_ptr<Tile>& tile) const;
+    //[[nodiscard]] Vector2<int> getTileCoordinates(const std::shared_ptr<Tile>& tile) const;
     [[nodiscard]] std::shared_ptr<Tile> getClosestAvailableTile(const Vector2<int>& tilePosition, const Vector2<int>& playerCoordinates) const;
     [[nodiscard]] std::vector<std::shared_ptr<Tile>> getPathToTile(const std::shared_ptr<Tile>& startTile, const std::shared_ptr<Tile>& goalTile) const;
     [[nodiscard]] bool isSolved();
-
+    [[nodiscard]] int getBoardRows() const { return m_boardRows; }
+    [[nodiscard]] int getBoardColumns() const { return m_boardColumns; }
+    [[nodiscard]] Vector2<int> getBoardBounds() const { return m_boardBounds; }
     static constexpr int MAX_ROWS = 7;
     static constexpr int MAX_COLUMNS = 7;
 
 private:
     SDL_Renderer* m_cacheRenderer;
-	int m_boardRows{};
+    int m_boardRows{};
     int m_boardColumns{};
-    Vector2<int> m_boardBoundaries{};
+    Vector2<int> m_boardBounds{};
 
     std::shared_ptr<Entity> m_hoveredEntity;
+    std::shared_ptr<Player> m_player;                            // Player sprite
     std::vector<std::vector<std::shared_ptr<Tile>>> m_tiles;
 
     struct AStarNode

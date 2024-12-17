@@ -46,18 +46,18 @@
     //    setCoordinates(potentialPosition);
 //}
 
-void Player::handleEvent(const SDL_Event& event)
-{
-    // Handle keydown and keyup events to update the set of pressed keys
-    switch (event.type)
-    {
-    case SDL_KEYDOWN:
-        m_pressedKeys.insert(event.key.keysym.sym);
-        break;
-    case SDL_KEYUP:
-        m_pressedKeys.erase(event.key.keysym.sym);
-        break;
-    default:
-        break;
-    }
-}
+//void Player::handleEvent(const SDL_Event& event)
+//{
+//    // Handle keydown and keyup events to update the set of pressed keys
+//    switch (event.type)
+//    {
+//    case SDL_KEYDOWN:
+//        m_pressedKeys.insert(event.key.keysym.sym);
+//        break;
+//    case SDL_KEYUP:
+//        m_pressedKeys.erase(event.key.keysym.sym);
+//        break;
+//    default:
+//        break;
+//    }
+//}
